@@ -49,8 +49,8 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
         size: file.size,
         text: validation.cleanText || extractedText
       });
-    } catch (err) {
-      setError('Unable to read this resume correctly. Please upload a text-based PDF or DOCX file.');
+    } catch (err: any) {
+      setError(err?.message || 'Unable to read this resume correctly. We couldn\'t extract readable text from this file. Please upload a text-based PDF or DOCX file.');
     } finally {
       setIsExtracting(false);
     }

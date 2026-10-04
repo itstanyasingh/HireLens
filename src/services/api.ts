@@ -1,4 +1,5 @@
 import { analyzeResumeContent } from './analyzer';
+import { validateExtractedResumeText } from './textValidator';
 
 export interface AnalysisReport {
   id: string;
@@ -83,17 +84,24 @@ export async function analyzeResume(
   fileName: string,
   jobDescription: string = ''
 ): Promise<AnalysisReport> {
+  const validation = validateExtractedResumeText(resumeText, fileName);
+  if (!validation.isValid) {
+    throw new Error(validation.errorMessage || 'Unable to read this resume correctly. Please upload a text-based PDF or DOCX file.');
+  }
+
+  const cleanText = validation.cleanText || resumeText;
+
   try {
     const res = await fetch('/api/analyze', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ resumeText, fileName, jobDescription }),
+      body: JSON.stringify({ resumeText: cleanText, fileName, jobDescription }),
     });
 
     if (res.ok) {
       const data: AnalysisReport = await res.json();
       data.id = 'report_' + Date.now();
-      data.resumeText = resumeText;
+      data.resumeText = cleanText;
       data.jobDescription = jobDescription;
       saveToHistory(data);
       return data;
@@ -103,7 +111,7 @@ export async function analyzeResume(
   }
 
   // Client-Side Deterministic Analysis using candidate's actual text
-  const report = analyzeResumeContent(resumeText, fileName, jobDescription);
+  const report = analyzeResumeContent(cleanText, fileName, jobDescription);
   saveToHistory(report);
   return report;
 }

@@ -49,7 +49,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
       });
     } catch (err: any) {
       console.error('File extraction error:', err);
-      setError('Unable to read this resume correctly. Please upload a text-based PDF or DOCX file.');
+      setError(err?.message || 'Unable to read this resume correctly. We couldn\'t extract readable text from this file. Please upload a text-based PDF or DOCX file.');
     } finally {
       setIsExtracting(false);
     }
