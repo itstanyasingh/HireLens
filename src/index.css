@@ -1,0 +1,55 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-primary: #FFFFFF;
+    --text-heading: #283333;
+    --text-body: #566060;
+    --text-muted: #697272;
+    --border-subtle: #E9ECEA;
+    --border-dashed: #8BCDBB;
+    --teal-primary: #159A78;
+    --teal-dark: #107C5F;
+    --teal-[#2F6F8F]: #2F6F8F;
+    --soft-mint: #DDF4EA;
+    --soft-peach: #F8E6DD;
+    --soft-lavender: #EEE9F7;
+  }
+
+  body {
+    background-color: var(--bg-primary);
+    color: var(--text-heading);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #8BCDBB;
+  border-radius: 9999px;
+}
+
+/* Editorial Atmospheric Background Blurs */
+.hero-glow-mint {
+  background: radial-gradient(circle, rgba(221,244,234,0.85) 0%, rgba(255,255,255,0) 70%);
+}
+.hero-glow-peach {
+  background: radial-gradient(circle, rgba(248,230,221,0.75) 0%, rgba(255,255,255,0) 70%);
+}
+.hero-glow-lavender {
+  background: radial-gradient(circle, rgba(238,233,247,0.75) 0%, rgba(255,255,255,0) 70%);
+}
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+}
