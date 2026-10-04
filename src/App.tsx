@@ -23,6 +23,7 @@ export default function App() {
   }, []);
 
   const handleStartAnalysis = async (resumeText: string, fileName: string, jobDescription?: string) => {
+    setActiveReport(null);
     setLoadingFileName(fileName);
     setIsSubmitting(true);
     setActiveTab('loading');
@@ -30,8 +31,9 @@ export default function App() {
     try {
       const report = await analyzeResume(resumeText, fileName, jobDescription);
       setActiveReport(report);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Analysis error:', err);
+      alert(err?.message || "Unable to read this resume correctly. We couldn't extract readable text from this file. Please upload a text-based PDF or DOCX file.");
       setActiveTab('landing');
     } finally {
       setIsSubmitting(false);

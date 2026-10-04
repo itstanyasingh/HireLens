@@ -1,4 +1,5 @@
 import { AnalysisReport } from './api';
+import { validateExtractedResumeText } from './textValidator';
 
 // Extensive Taxonomy of 200+ Recognized Technical & Professional Skills
 export const SKILLS_TAXONOMY: Record<string, string[]> = {
@@ -40,16 +41,34 @@ export const SKILLS_TAXONOMY: Record<string, string[]> = {
   ]
 };
 
-const WEAK_VERB_PATTERNS = [
-  { regex: /\b(worked on|worked with|helped with|helped build|assisted with|assisted in|responsible for|handled|did|made|participated in|supported|involved in|tasks included|duties included)\b/gi, label: 'Passive or weak phrasing' },
-];
-
 const STRONG_VERBS = [
   'engineered', 'architected', 'spearheaded', 'accelerated', 'deployed', 'orchestrated',
   'developed', 'designed', 'streamlined', 'optimized', 'automated', 'implemented',
   'refactored', 'built', 'launched', 'scaled', 'delivered', 'established', 'formulated',
   'championed', 'revitalized', 'curated', 'pioneered', 'maximized', 'minimized'
 ];
+
+/**
+ * Validates individual bullet point line to ensure it is authentic English text
+ */
+function isValidBulletText(line: string): boolean {
+  if (!line || typeof line !== 'string') return false;
+  const clean = line.trim();
+  if (clean.length < 12 || clean.length > 300) return false;
+
+  // Reject PDF internals / symbol soup
+  if (/[a-zA-Z0-9]+["'{}|\\_#$^[\]<>`~=]{1,}[a-zA-Z0-9]+/.test(clean)) return false;
+  if (/(\/FlateDecode|\/XObject|endstream|endobj|xref)/i.test(clean)) return false;
+
+  const words = clean.split(/\s+/).filter(w => /^[a-zA-Z0-9.,;:!?()\-'/+#&@%$]+$/.test(w));
+  if (words.length < 3) return false;
+
+  // High letter ratio
+  const letters = clean.replace(/[^a-zA-Z]/g, '').length;
+  if (letters / clean.length < 0.60) return false;
+
+  return true;
+}
 
 /**
  * Deterministic Resume Parsing & Analysis Engine
@@ -59,7 +78,13 @@ export function analyzeResumeContent(
   fileName: string,
   jobDescription?: string
 ): AnalysisReport {
-  const text = resumeText || '';
+  // 0. Strict Validation
+  const validation = validateExtractedResumeText(resumeText, fileName);
+  if (!validation.isValid) {
+    throw new Error(validation.errorMessage || 'Unable to read this resume correctly. Please upload a text-based PDF or DOCX file.');
+  }
+
+  const text = validation.cleanText || resumeText;
   const textLower = text.toLowerCase();
   const fileExt = fileName.split('.').pop()?.toLowerCase() || 'pdf';
   const isPdfOrDocx = ['pdf', 'docx'].includes(fileExt);
@@ -90,7 +115,6 @@ export function analyzeResumeContent(
   for (const [category, skillsList] of Object.entries(SKILLS_TAXONOMY)) {
     skillCategoryCount[category] = 0;
     for (const skill of skillsList) {
-      // Word boundary regex matching
       const escapedSkill = skill.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
       const regex = new RegExp(`(?:^|[^a-zA-Z0-9+#.])${escapedSkill}(?:$|[^a-zA-Z0-9+#.])`, 'i');
       
@@ -124,12 +148,11 @@ export function analyzeResumeContent(
   for (const line of rawLines) {
     if (/^[•\-\*\u2022\u25E6\u2043\u2219]\s*/.test(line) || /^\d+\.\s+/.test(line)) {
       const clean = line.replace(/^[•\-\*\u2022\u25E6\u2043\u2219\d\.\s]+/, '').trim();
-      if (clean.length >= 15) {
+      if (isValidBulletText(clean)) {
         bulletLines.push(clean);
       }
     } else if (line.length >= 25 && line.length <= 220 && !line.endsWith(':') && !hasSectionHeaderMatch(line)) {
-      // Consider standalone sentences as potential bullet descriptions
-      if (line.split(' ').length >= 5) {
+      if (isValidBulletText(line)) {
         bulletLines.push(line);
       }
     }
@@ -142,15 +165,10 @@ export function analyzeResumeContent(
 
   // Weak bullet points identification
   const weakBullets: { original: string; reason: string; suggestion: string }[] = [];
-  const firstWordMap: Record<string, number> = {};
 
   for (const bullet of bulletLines) {
-    const firstWord = bullet.split(' ')[0].toLowerCase().replace(/[^a-z]/g, '');
-    if (firstWord) {
-      firstWordMap[firstWord] = (firstWordMap[firstWord] || 0) + 1;
-    }
+    if (!isValidBulletText(bullet)) continue;
 
-    // Check for weak starter verbs
     if (/^(worked on|worked with|helped|assisted|responsible for|handled|participated in|supported|involved in|did|made|duties included)/i.test(bullet)) {
       const coreAction = bullet.replace(/^(worked on|worked with|helped with|helped build|assisted with|assisted in|responsible for|handled|did|made|participated in|supported|involved in|tasks included|duties included)\s*/i, '');
       weakBullets.push({
@@ -158,8 +176,7 @@ export function analyzeResumeContent(
         reason: 'Begins with passive, duty-focused phrasing rather than an impactful active verb.',
         suggestion: `Engineered and executed ${coreAction}, increasing system reliability and workflow efficiency by [20%].`
       });
-    } else if (!metricRegex.test(bullet) && bullet.length > 25 && weakBullets.length < 4) {
-      // Bullet without metrics
+    } else if (!metricRegex.test(bullet) && bullet.length > 25 && weakBullets.length < 3) {
       weakBullets.push({
         original: bullet,
         reason: 'Statement describes a responsibility but lacks quantifiable impact, scale, or business outcome.',
@@ -196,7 +213,6 @@ export function analyzeResumeContent(
       jobMatchScore = 75;
     }
   } else {
-    // Benchmark against industry standard modern software / role skills
     const benchmarkSkills = ['Git', 'REST API', 'SQL', 'Docker', 'CI/CD', 'Unit Testing', 'TypeScript', 'Agile'];
     matchedKeywords = benchmarkSkills.filter(s => detectedSkillsSet.has(s));
     missingKeywords = benchmarkSkills.filter(s => !detectedSkillsSet.has(s));
@@ -293,7 +309,6 @@ export function analyzeResumeContent(
   ];
 
   // 8. Deterministic Scoring Logic
-  // ATS Score (0-100)
   let atsScore = 50;
   if (isPdfOrDocx) atsScore += 15;
   if (email) atsScore += 15;
@@ -301,10 +316,9 @@ export function analyzeResumeContent(
   if (hasExperience) atsScore += 15;
   if (hasEducation) atsScore += 10;
   if (hasLinkedin || hasGithub) atsScore += 10;
-  if (!text.includes('curriculum vitae') && text.length > 200) atsScore += 5;
+  if (text.length > 200) atsScore += 5;
   atsScore = Math.min(100, Math.max(30, atsScore));
 
-  // Content Score (0-100)
   let contentScore = 55;
   const strongVerbCount = STRONG_VERBS.filter(v => textLower.includes(v)).length;
   contentScore += Math.min(25, strongVerbCount * 3);
@@ -313,14 +327,12 @@ export function analyzeResumeContent(
   if (hasSummary) contentScore += 5;
   contentScore = Math.min(98, Math.max(35, contentScore));
 
-  // Skills Score (0-100)
   let skillsScore = 40;
   skillsScore += Math.min(35, detectedSkills.length * 4);
   skillsScore += Math.min(20, skillStrength.length * 5);
   if (hasSkills) skillsScore += 10;
   skillsScore = Math.min(98, Math.max(30, skillsScore));
 
-  // Recruiter Score (0-100)
   let recruiterScore = 50;
   if (hasExperience) recruiterScore += 15;
   if (hasLinkedin) recruiterScore += 10;
@@ -329,7 +341,6 @@ export function analyzeResumeContent(
   if (hasProjects) recruiterScore += 10;
   recruiterScore = Math.min(96, Math.max(40, recruiterScore));
 
-  // Overall Score (Deterministic Weighted Average)
   const overallScore = Math.round(
     atsScore * 0.30 +
     contentScore * 0.25 +

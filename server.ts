@@ -75,15 +75,23 @@ function generateFallbackAnalysis(resumeText: string, fileName: string, jobDescr
   const lines = resumeText.split('\n').map(l => l.trim()).filter(l => l.length > 0);
   const weakBullets: { original: string; reason: string; suggestion: string }[] = [];
 
+  const isValidBullet = (str: string) => {
+    if (!str || str.length < 12 || str.length > 250) return false;
+    if (/[a-zA-Z0-9]+["'{}|\\_#$^[\]<>`~=]{1,}[a-zA-Z0-9]+/.test(str)) return false;
+    if (/(\/FlateDecode|\/XObject|endstream|endobj|xref)/i.test(str)) return false;
+    const words = str.split(/\s+/).filter(w => /^[a-zA-Z0-9.,;:!?()\-'/+#&@%$]+$/.test(w));
+    return words.length >= 3;
+  };
+
   for (const line of lines) {
     if (line.startsWith('•') || line.startsWith('-') || line.startsWith('*') || /^\d+\./.test(line)) {
       const cleanLine = line.replace(/^[•\-\*\d\.\s]+/, '').trim();
-      if (cleanLine.length > 15 && cleanLine.length < 120) {
-        if (/^(worked on|responsible for|helped with|handled|assisted in|did)/i.test(cleanLine)) {
+      if (isValidBullet(cleanLine)) {
+        if (/^(worked on|worked with|helped with|handled|assisted in|did)/i.test(cleanLine)) {
           weakBullets.push({
             original: cleanLine,
             reason: 'Starts with weak, passive language ("' + cleanLine.split(' ')[0] + ' ' + cleanLine.split(' ')[1] + '") rather than an impactful action verb.',
-            suggestion: 'Architected and implemented ' + cleanLine.replace(/^(worked on|responsible for|helped with|handled|assisted in|did)/i, '').trim() + ', improving efficiency by 25%.'
+            suggestion: 'Architected and implemented ' + cleanLine.replace(/^(worked on|worked with|helped with|handled|assisted in|did)/i, '').trim() + ', improving efficiency by 25%.'
           });
         } else if (!/\d+/.test(cleanLine) && weakBullets.length < 3) {
           weakBullets.push({

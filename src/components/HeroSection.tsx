@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { SAMPLE_RESUMES } from '../data/mockResumes';
 import { FileCode, X, Lock, ShieldCheck, MapPin, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
 import { extractTextFromFile } from '../services/pdfExtractor';
+import { validateExtractedResumeText } from '../services/textValidator';
 
 interface HeroSectionProps {
   onStartAnalysis: (resumeText: string, fileName: string, jobDescription?: string) => void;
@@ -33,9 +34,10 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
     setIsExtracting(true);
     try {
       const extractedText = await extractTextFromFile(file);
-      
-      if (!extractedText || extractedText.trim().length < 20) {
-        setError('Could not extract text from this document. Please ensure it contains readable text or try pasting text.');
+      const validation = validateExtractedResumeText(extractedText, file.name);
+
+      if (!validation.isValid) {
+        setError(validation.errorMessage || "Unable to read this resume correctly. We couldn't extract readable text from this file. Please upload a text-based PDF or DOCX file.");
         setIsExtracting(false);
         return;
       }
@@ -43,11 +45,11 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
       setSelectedFile({
         name: file.name,
         size: file.size,
-        text: extractedText
+        text: validation.cleanText || extractedText
       });
     } catch (err: any) {
       console.error('File extraction error:', err);
-      setError('Failed to parse document. Please ensure it is not password protected.');
+      setError('Unable to read this resume correctly. Please upload a text-based PDF or DOCX file.');
     } finally {
       setIsExtracting(false);
     }

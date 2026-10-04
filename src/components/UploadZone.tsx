@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, FileText, CheckCircle2, AlertCircle, X, Sparkles, FileCode, Edit3, RefreshCw } from 'lucide-react';
 import { SAMPLE_RESUMES, SampleResume } from '../data/mockResumes';
 import { extractTextFromFile } from '../services/pdfExtractor';
+import { validateExtractedResumeText } from '../services/textValidator';
 
 interface UploadZoneProps {
   onFileSelect: (text: string, fileName: string) => void;
@@ -35,8 +36,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
     setIsExtracting(true);
     try {
       const extractedText = await extractTextFromFile(file);
-      if (!extractedText || extractedText.trim().length < 20) {
-        setError('Could not extract readable text from this file. Please verify it contains selectable text.');
+      const validation = validateExtractedResumeText(extractedText, file.name);
+
+      if (!validation.isValid) {
+        setError(validation.errorMessage || "Unable to read this resume correctly. We couldn't extract readable text from this file. Please upload a text-based PDF or DOCX file.");
         setIsExtracting(false);
         return;
       }
@@ -44,10 +47,10 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
       setSelectedFile({
         name: file.name,
         size: file.size,
-        text: extractedText
+        text: validation.cleanText || extractedText
       });
     } catch (err) {
-      setError('Failed to parse document. Please try again.');
+      setError('Unable to read this resume correctly. Please upload a text-based PDF or DOCX file.');
     } finally {
       setIsExtracting(false);
     }

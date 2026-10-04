@@ -148,7 +148,25 @@ export async function fixBulletPoint(originalBullet: string, targetRole: string 
 export function getHistory(): AnalysisReport[] {
   try {
     const data = localStorage.getItem(HISTORY_KEY);
-    return data ? JSON.parse(data) : [];
+    if (!data) return [];
+    const list: AnalysisReport[] = JSON.parse(data);
+    
+    // Purge corrupted reports containing binary stream artifacts
+    const sanitized = list.filter(rep => {
+      if (!rep || !rep.categories || !rep.categories.content) return false;
+      const weakBullets = rep.categories.content.weakBullets || [];
+      const hasCorruptedBullet = weakBullets.some(b => 
+        /[a-zA-Z0-9]+["'{}|\\_#$^[\]<>`~=]{1,}[a-zA-Z0-9]+/.test(b.original || '') ||
+        /(\/FlateDecode|\/XObject|endstream|endobj|xref)/i.test(b.original || '')
+      );
+      return !hasCorruptedBullet;
+    });
+
+    if (sanitized.length !== list.length) {
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(sanitized));
+    }
+
+    return sanitized;
   } catch (e) {
     return [];
   }
