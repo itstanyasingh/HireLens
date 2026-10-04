@@ -85,7 +85,10 @@ export default function App() {
         {activeTab === 'report' && activeReport && (
           <ReportPage
             report={activeReport}
-            onAnalyzeAnother={() => setActiveTab('landing')}
+            onAnalyzeAnother={() => {
+              setActiveTab('landing');
+              setTimeout(() => handleScrollToSection('sec-upload'), 100);
+            }}
           />
         )}
 

@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
-import { Upload, FileText, CheckCircle2, AlertCircle, X, Sparkles, FileCode, Edit3 } from 'lucide-react';
+import { Upload, FileText, CheckCircle2, AlertCircle, X, Sparkles, FileCode, Edit3, RefreshCw } from 'lucide-react';
 import { SAMPLE_RESUMES, SampleResume } from '../data/mockResumes';
+import { extractTextFromFile } from '../services/pdfExtractor';
 
 interface UploadZoneProps {
   onFileSelect: (text: string, fileName: string) => void;
@@ -11,11 +12,12 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
   const [isDragging, setIsDragging] = useState(false);
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: number; text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
   const [pastedText, setPastedText] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     setError(null);
     const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
     const ext = file.name.split('.').pop()?.toLowerCase();
@@ -30,28 +32,24 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = (e.target?.result as string) || '';
-      // Clean readable text extraction or fallback plain text representation
-      let extractedText = content;
-      if (file.type === 'application/pdf' || ext === 'pdf') {
-        // Simple plain text conversion for client preview if binary
-        extractedText = content.replace(/[\x00-\x1F\x7F-\xFF]/g, ' ').substring(0, 8000) ||
-          `Resume File: ${file.name}\nCandidate Contact Email: candidate@example.com\nPhone: (555) 123-4567\nSummary: Software developer with experience in React, Node.js, Python, SQL, Docker, and REST APIs.`;
+    setIsExtracting(true);
+    try {
+      const extractedText = await extractTextFromFile(file);
+      if (!extractedText || extractedText.trim().length < 20) {
+        setError('Could not extract readable text from this file. Please verify it contains selectable text.');
+        setIsExtracting(false);
+        return;
       }
-      
+
       setSelectedFile({
         name: file.name,
         size: file.size,
         text: extractedText
       });
-    };
-
-    if (ext === 'txt') {
-      reader.readAsText(file);
-    } else {
-      reader.readAsText(file);
+    } catch (err) {
+      setError('Failed to parse document. Please try again.');
+    } finally {
+      setIsExtracting(false);
     }
   };
 

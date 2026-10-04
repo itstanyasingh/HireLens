@@ -7,7 +7,9 @@ import { ActionPlan } from '../components/ActionPlan';
 import { JobMatchCard } from '../components/JobMatchCard';
 import { SkillGapCard } from '../components/SkillGapCard';
 import { ResumeFixerModal } from '../components/ResumeFixerModal';
-import { Download, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Sparkles, FileText, ExternalLink, HelpCircle, ShieldCheck } from 'lucide-react';
+import { ScoringMethodologyModal } from '../components/ScoringMethodologyModal';
+import { downloadAnalysisReport } from '../utils/reportExporter';
+import { Download, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Sparkles, FileText, ExternalLink, HelpCircle, ShieldCheck, Scale } from 'lucide-react';
 
 interface ReportPageProps {
   report: AnalysisReport;
@@ -17,6 +19,7 @@ interface ReportPageProps {
 export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother }) => {
   const [activeSection, setActiveSection] = useState('sec-overview');
   const [fixerModalOpen, setFixerModalOpen] = useState(false);
+  const [methodologyModalOpen, setMethodologyModalOpen] = useState(false);
   const [fixerOriginalText, setFixerOriginalText] = useState('');
   const [fixerReason, setFixerReason] = useState('');
 
@@ -35,8 +38,8 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
     setFixerModalOpen(true);
   };
 
-  const handlePrintDownload = () => {
-    window.print();
+  const handleDownload = () => {
+    downloadAnalysisReport(report);
   };
 
   // Prepare Category Summaries for CheckCategory component
@@ -92,9 +95,9 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
   });
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
       
-      {/* 8. REPORT HEADER */}
+      {/* REPORT HEADER */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
@@ -118,8 +121,17 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
         {/* Top Right Actions */}
         <div className="flex items-center gap-3 no-print shrink-0">
           <button
-            onClick={handlePrintDownload}
-            className="px-4 py-2.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-800 text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5"
+            onClick={() => setMethodologyModalOpen(true)}
+            className="px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            title="View exact mathematical scoring methodology"
+          >
+            <Scale className="w-4 h-4 text-[#16B889]" />
+            Methodology
+          </button>
+
+          <button
+            onClick={handleDownload}
+            className="px-4 py-2.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-800 text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
           >
             <Download className="w-4 h-4 text-slate-600" />
             Download Report
@@ -127,7 +139,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
 
           <button
             onClick={onAnalyzeAnother}
-            className="px-4 py-2.5 bg-[#35C99A] hover:bg-[#168F70] text-[#101716] hover:text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5"
+            className="px-4 py-2.5 bg-[#16B889] hover:bg-[#129A72] text-white text-xs font-bold rounded-xl transition-all shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Analyze Another Resume
@@ -188,7 +200,6 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
             <div className="space-y-3">
               {report.categories.ats.items.map((item, idx) => {
                 const isProblem = item.status.toLowerCase().includes('problem') || item.status.toLowerCase().includes('missing');
-                const isWarning = item.status.toLowerCase().includes('attention') || item.status.toLowerCase().includes('improved');
 
                 return (
                   <div
@@ -285,7 +296,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
               </div>
 
               <div className="text-right">
-                <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full">
+                <span className="text-xs font-mono font-bold text-[#16B889] bg-[#DDF5EC] border border-[#BDEBDC] px-3 py-1 rounded-full">
                   {report.categories.content.quantifiedAchievementsCount} Quantified Metrics Found
                 </span>
               </div>
@@ -310,7 +321,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
 
                       <button
                         onClick={() => openFixer(bullet.original, bullet.reason)}
-                        className="text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white px-3.5 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5"
+                        className="text-xs font-semibold bg-[#16B889] hover:bg-[#129A72] text-white px-3.5 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
                       >
                         <Sparkles className="w-3.5 h-3.5" />
                         Fix this
@@ -344,7 +355,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
                 Detected Skills & Technical Stack
               </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Verified technical languages, frameworks, cloud databases, and software methodologies.
+                Verified technical languages, frameworks, cloud databases, and software methodologies extracted from your document.
               </p>
             </div>
 
@@ -354,15 +365,19 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
                 Detected Skills ({report.categories.skills.detectedSkills.length})
               </div>
               <div className="flex flex-wrap gap-2">
-                {report.categories.skills.detectedSkills.map((sk, idx) => (
-                  <span
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold bg-slate-100 text-slate-800 border border-slate-200 px-3 py-1 rounded-lg"
-                  >
-                    <CheckCircle2 className="w-3.5 h-3.5 text-indigo-600" />
-                    {sk}
-                  </span>
-                ))}
+                {report.categories.skills.detectedSkills.length > 0 ? (
+                  report.categories.skills.detectedSkills.map((sk, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold bg-white text-[#273330] border border-[#E2E8E5] px-3 py-1 rounded-lg shadow-2xs"
+                    >
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#16B889]" />
+                      {sk}
+                    </span>
+                  ))
+                ) : (
+                  <span className="text-xs text-slate-400 italic">No standard technical skills detected in document text.</span>
+                )}
               </div>
             </div>
 
@@ -395,7 +410,7 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
               </div>
 
               {report.jobDescription && (
-                <span className="text-xs font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-full self-start">
+                <span className="text-xs font-mono font-bold text-[#16B889] bg-[#DDF5EC] border border-[#BDEBDC] px-3 py-1 rounded-full self-start">
                   Job Match: {report.jobMatchScore}%
                 </span>
               )}
@@ -536,6 +551,13 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
         onClose={() => setFixerModalOpen(false)}
         originalBullet={fixerOriginalText}
         reason={fixerReason}
+      />
+
+      {/* Scoring Methodology Modal */}
+      <ScoringMethodologyModal
+        isOpen={methodologyModalOpen}
+        onClose={() => setMethodologyModalOpen(false)}
+        report={report}
       />
 
     </div>

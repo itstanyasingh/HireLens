@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { SAMPLE_RESUMES } from '../data/mockResumes';
-import { FileCode, X, Lock, ShieldCheck, MapPin, ChevronUp, ChevronDown } from 'lucide-react';
+import { FileCode, X, Lock, ShieldCheck, MapPin, ChevronUp, ChevronDown, RefreshCw } from 'lucide-react';
+import { extractTextFromFile } from '../services/pdfExtractor';
 
 interface HeroSectionProps {
   onStartAnalysis: (resumeText: string, fileName: string, jobDescription?: string) => void;
@@ -10,39 +11,46 @@ interface HeroSectionProps {
 export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoading }) => {
   const [selectedFile, setSelectedFile] = useState<{ name: string; size: number; text: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFile = (file: File) => {
+  const handleFile = async (file: File) => {
     setError(null);
     const ext = file.name.split('.').pop()?.toLowerCase();
 
     if (!['pdf', 'docx', 'txt'].includes(ext || '')) {
-      setError('Please upload a PDF or DOCX file.');
+      setError('Please upload a PDF, DOCX, or TXT file.');
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Your file is larger than the 2MB limit.');
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Your file is larger than the 5MB limit.');
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = (e.target?.result as string) || '';
-      let extractedText = content;
-      if (ext === 'pdf') {
-        extractedText = content.replace(/[\x00-\x1F\x7F-\xFF]/g, ' ').substring(0, 8000) ||
-          `Resume File: ${file.name}\nCandidate Contact Email: candidate@example.com\nPhone: (555) 123-4567\nSummary: Software developer with experience in React, Node.js, Python, SQL, Docker, and REST APIs.`;
+    setIsExtracting(true);
+    try {
+      const extractedText = await extractTextFromFile(file);
+      
+      if (!extractedText || extractedText.trim().length < 20) {
+        setError('Could not extract text from this document. Please ensure it contains readable text or try pasting text.');
+        setIsExtracting(false);
+        return;
       }
+
       setSelectedFile({
         name: file.name,
         size: file.size,
         text: extractedText
       });
-    };
-    reader.readAsText(file);
+    } catch (err: any) {
+      console.error('File extraction error:', err);
+      setError('Failed to parse document. Please ensure it is not password protected.');
+    } finally {
+      setIsExtracting(false);
+    }
   };
 
   const handleRunAnalysis = () => {

@@ -87,29 +87,20 @@ Columbia University — B.A. in Economics & Data Science
 Graduated May 2021`
   },
   {
-    id: 'sample-ds',
-    title: 'Data Scientist / ML Engineer',
-    role: 'Machine Learning Specialist',
-    fileName: 'Maya_Patel_Data_Science.pdf',
-    resumeText: `Maya Patel
-Seattle, WA | maya.patel@email.com | (555) 902-1144 | linkedin.com/in/mayapatelds | github.com/mayapatel
+    id: 'sample-weak',
+    title: 'Junior Resume (Weak)',
+    role: 'Needs Optimization',
+    fileName: 'Draft_Resume_Version1.docx',
+    resumeText: `John Doe
 
-PROFESSIONAL SUMMARY
-Machine Learning Engineer with 4 years of experience building end-to-end predictive models, NLP algorithms, and computer vision pipelines. Skilled in PyTorch, TensorFlow, Scikit-learn, Python, and SQL.
+Experience
+Company ABC
+• Worked on a website using React.
+• Helped with bug fixes and meetings.
+• Responsible for database tasks.
+• Assisted team with daily work.
 
-TECHNICAL SKILLS
-Languages & Frameworks: Python, R, SQL, PyTorch, TensorFlow, Scikit-Learn, Pandas, NumPy, FastAPI
-Data & Infrastructure: PostgreSQL, Snowflake, Spark, Docker, AWS S3, MLflow, Git
-ML Domains: NLP, LLM Fine-tuning, Time Series Analysis, Feature Engineering, Classification
-
-EXPERIENCE
-DataIQ Analytics — Machine Learning Engineer
-Aug 2023 – Present | Seattle, WA
-• Developed customer churn prediction model using Gradient Boosting (XGBoost), improving precision by 19%.
-• fine-tuned LLM embeddings for enterprise semantic search over 2M internal documents using PyTorch.
-• Worked on data pipelines with Python.
-
-EDUCATION
-University of Washington — M.S. in Data Science & Machine Learning (2023)`
+Education
+College Degree`
   }
 ];
