@@ -14,11 +14,18 @@ export default function App() {
   const [loadingFileName, setLoadingFileName] = useState<string>('Resume.pdf');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Auto load recent history on start if available
+  // Auto load recent history on start if available & ensure favicon is active
   useEffect(() => {
     const history = getHistory();
     if (history.length > 0 && !activeReport) {
       setActiveReport(history[0]);
+    }
+
+    // Refresh tab favicon dynamically to force browser tab repaint
+    const iconLink = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+    if (iconLink) {
+      const currentHref = iconLink.href;
+      iconLink.href = currentHref;
     }
   }, []);
 

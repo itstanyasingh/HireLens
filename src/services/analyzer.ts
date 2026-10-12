@@ -70,6 +70,16 @@ function isValidBulletText(line: string): boolean {
   return true;
 }
 
+export function matchSkillInText(skill: string, text: string): boolean {
+  if (!skill || !text) return false;
+  const escaped = skill.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+  const boundaryPre = '(?:^|[^a-zA-Z0-9+#])';
+  const boundaryPost = /[a-zA-Z0-9]$/.test(skill)
+    ? '(?=\\b|[.,;:!?\\s]|$|[^a-zA-Z0-9+#])'
+    : '(?:$|[^a-zA-Z0-9+#]|\\s)';
+  return new RegExp(boundaryPre + escaped + boundaryPost, 'i').test(text);
+}
+
 /**
  * Deterministic Resume Parsing & Analysis Engine
  */
@@ -115,10 +125,7 @@ export function analyzeResumeContent(
   for (const [category, skillsList] of Object.entries(SKILLS_TAXONOMY)) {
     skillCategoryCount[category] = 0;
     for (const skill of skillsList) {
-      const escapedSkill = skill.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-      const regex = new RegExp(`(?:^|[^a-zA-Z0-9+#.])${escapedSkill}(?:$|[^a-zA-Z0-9+#.])`, 'i');
-      
-      if (regex.test(text)) {
+      if (matchSkillInText(skill, text)) {
         detectedSkillsSet.add(skill);
         skillCategoryCount[category]++;
       }
@@ -194,8 +201,7 @@ export function analyzeResumeContent(
     const jdSkills = new Set<string>();
     for (const [_, skillsList] of Object.entries(SKILLS_TAXONOMY)) {
       for (const skill of skillsList) {
-        const escaped = skill.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
-        if (new RegExp(`(?:^|[^a-zA-Z0-9+#.])${escaped}(?:$|[^a-zA-Z0-9+#.])`, 'i').test(jobDescription)) {
+        if (matchSkillInText(skill, jobDescription)) {
           jdSkills.add(skill);
         }
       }

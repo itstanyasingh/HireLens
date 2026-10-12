@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { AnalysisReport } from '../services/api';
+import React, { useState, useEffect } from 'react';
+import { AnalysisReport, saveToHistory } from '../services/api';
 import { ReportSidebar } from '../components/ReportSidebar';
 import { ScoreCircle } from '../components/ScoreCircle';
 import { CheckCategory, CategorySummary } from '../components/CheckCategory';
@@ -9,7 +9,7 @@ import { SkillGapCard } from '../components/SkillGapCard';
 import { ResumeFixerModal } from '../components/ResumeFixerModal';
 import { ScoringMethodologyModal } from '../components/ScoringMethodologyModal';
 import { downloadAnalysisReport } from '../utils/reportExporter';
-import { Download, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Sparkles, FileText, ExternalLink, HelpCircle, ShieldCheck, Scale } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Sparkles, FileText, ExternalLink, HelpCircle, ShieldCheck, Scale, Printer, Check } from 'lucide-react';
 
 interface ReportPageProps {
   report: AnalysisReport;
@@ -17,11 +17,17 @@ interface ReportPageProps {
 }
 
 export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother }) => {
+  const [currentReport, setCurrentReport] = useState<AnalysisReport>(report);
   const [activeSection, setActiveSection] = useState('sec-overview');
   const [fixerModalOpen, setFixerModalOpen] = useState(false);
   const [methodologyModalOpen, setMethodologyModalOpen] = useState(false);
   const [fixerOriginalText, setFixerOriginalText] = useState('');
   const [fixerReason, setFixerReason] = useState('');
+  const [fixSuccessMessage, setFixSuccessMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    setCurrentReport(report);
+  }, [report]);
 
   // Scroll smoothly to section
   const handleNavigateSection = (sectionId: string) => {
@@ -38,8 +44,52 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
     setFixerModalOpen(true);
   };
 
+  const handleApplyFix = (fixedBullet: string) => {
+    const updatedWeakBullets = currentReport.categories.content.weakBullets.map((b) => {
+      if (b.original === fixerOriginalText) {
+        return {
+          ...b,
+          resolved: true,
+          suggestion: fixedBullet,
+        };
+      }
+      return b;
+    });
+
+    const newContentScore = Math.min(98, currentReport.contentScore + 4);
+    const newOverallScore = Math.round(
+      currentReport.atsScore * 0.30 +
+      newContentScore * 0.25 +
+      currentReport.skillsScore * 0.20 +
+      currentReport.recruiterScore * 0.25
+    );
+
+    const updated: AnalysisReport = {
+      ...currentReport,
+      contentScore: newContentScore,
+      overallScore: newOverallScore,
+      categories: {
+        ...currentReport.categories,
+        content: {
+          ...currentReport.categories.content,
+          score: newContentScore,
+          weakBullets: updatedWeakBullets,
+        },
+      },
+    };
+
+    setCurrentReport(updated);
+    saveToHistory(updated);
+    setFixSuccessMessage('Suggestion applied! Resume statement updated and score refreshed.');
+    setTimeout(() => setFixSuccessMessage(null), 4000);
+  };
+
   const handleDownload = () => {
-    downloadAnalysisReport(report);
+    downloadAnalysisReport(currentReport);
+  };
+
+  const handlePrintPdf = () => {
+    window.print();
   };
 
   // Prepare Category Summaries for CheckCategory component
@@ -47,48 +97,48 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
     {
       id: 'sec-ats',
       name: 'ATS Essentials',
-      status: `${report.categories.ats.passedChecks}/${report.categories.ats.totalChecks} checks passed`,
-      passedCount: report.categories.ats.passedChecks,
-      totalCount: report.categories.ats.totalChecks,
+      status: `${currentReport.categories.ats.passedChecks}/${currentReport.categories.ats.totalChecks} checks passed`,
+      passedCount: currentReport.categories.ats.passedChecks,
+      totalCount: currentReport.categories.ats.totalChecks,
       iconName: 'ats',
     },
     {
       id: 'sec-structure',
       name: 'Resume Structure',
       status: 'Standard Sections Found',
-      issueCount: report.categories.structure.items.filter((i) => i.status !== 'Found').length,
+      issueCount: currentReport.categories.structure.items.filter((i) => i.status !== 'Found').length,
       iconName: 'structure',
     },
     {
       id: 'sec-content',
       name: 'Content Quality',
-      status: `${report.categories.content.weakBullets.length} Improvements`,
-      issueCount: report.categories.content.weakBullets.length,
+      status: `${currentReport.categories.content.weakBullets.length} Improvements`,
+      issueCount: currentReport.categories.content.weakBullets.length,
       iconName: 'content',
     },
     {
       id: 'sec-skills',
       name: 'Skills & Stack',
-      status: `${report.categories.skills.detectedSkills.length} Tech Skills Detected`,
+      status: `${currentReport.categories.skills.detectedSkills.length} Tech Skills Detected`,
       iconName: 'skills',
     },
     {
       id: 'sec-keywords',
       name: 'Keywords & Job Match',
-      status: `${report.categories.keywords.matchedCount} Found / ${report.categories.keywords.missingCount} Missing`,
-      issueCount: report.categories.keywords.missingCount,
+      status: `${currentReport.categories.keywords.matchedCount} Found / ${currentReport.categories.keywords.missingCount} Missing`,
+      issueCount: currentReport.categories.keywords.missingCount,
       iconName: 'keywords',
     },
     {
       id: 'sec-recruiter',
       name: 'Recruiter Signals',
-      status: `${report.categories.recruiter.strengths.length} Strengths / ${report.categories.recruiter.improvements.length} Fixes`,
-      issueCount: report.categories.recruiter.improvements.length,
+      status: `${currentReport.categories.recruiter.strengths.length} Strengths / ${currentReport.categories.recruiter.improvements.length} Fixes`,
+      issueCount: currentReport.categories.recruiter.improvements.length,
       iconName: 'recruiter',
     },
   ];
 
-  const formattedDate = new Date(report.analyzedAt || Date.now()).toLocaleDateString('en-US', {
+  const formattedDate = new Date(currentReport.analyzedAt || Date.now()).toLocaleDateString('en-US', {
     month: 'long',
     day: 'numeric',
     year: 'numeric',
@@ -97,6 +147,17 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8 animate-fadeIn">
       
+      {/* Success Notification Banner */}
+      {fixSuccessMessage && (
+        <div className="bg-emerald-50 border border-emerald-300 text-emerald-900 px-5 py-3 rounded-xl text-xs font-semibold flex items-center justify-between animate-fadeIn shadow-2xs no-print">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{fixSuccessMessage}</span>
+          </div>
+          <button onClick={() => setFixSuccessMessage(null)} className="text-emerald-700 hover:text-emerald-900 cursor-pointer">✕</button>
+        </div>
+      )}
+
       {/* REPORT HEADER */}
       <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-8 flex flex-col md:flex-row md:items-center justify-between gap-6">
         <div>
@@ -110,16 +171,16 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight font-mono">
-            {report.fileName}
+            {currentReport.fileName}
           </h1>
 
           <p className="text-xs text-slate-500 mt-1">
-            Target Analysis Mode: {report.jobDescription ? 'Specific Job Posting Comparison' : 'General Role Benchmark'}
+            Target Analysis Mode: {currentReport.jobDescription ? 'Specific Job Posting Comparison' : 'General Role Benchmark'}
           </p>
         </div>
 
         {/* Top Right Actions */}
-        <div className="flex items-center gap-3 no-print shrink-0">
+        <div className="flex items-center gap-3 no-print shrink-0 flex-wrap sm:flex-nowrap">
           <button
             onClick={() => setMethodologyModalOpen(true)}
             className="px-3.5 py-2.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
@@ -127,6 +188,15 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
           >
             <Scale className="w-4 h-4 text-[#16B889]" />
             Methodology
+          </button>
+
+          <button
+            onClick={handlePrintPdf}
+            className="px-3.5 py-2.5 bg-white border border-slate-300 hover:border-slate-400 text-slate-800 text-xs font-semibold rounded-xl transition-all shadow-2xs flex items-center gap-1.5 cursor-pointer"
+            title="Print or Save as PDF"
+          >
+            <Printer className="w-4 h-4 text-slate-600" />
+            Print / PDF
           </button>
 
           <button
@@ -152,14 +222,14 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
         
         {/* LEFT: Sticky Summary & Navigation */}
         <ReportSidebar
-          score={report.overallScore}
-          atsScore={report.atsScore}
-          contentScore={report.contentScore}
-          skillsScore={report.skillsScore}
-          recruiterScore={report.recruiterScore}
+          score={currentReport.overallScore}
+          atsScore={currentReport.atsScore}
+          contentScore={currentReport.contentScore}
+          skillsScore={currentReport.skillsScore}
+          recruiterScore={currentReport.recruiterScore}
           activeSection={activeSection}
           onNavigateSection={handleNavigateSection}
-          fileName={report.fileName}
+          fileName={currentReport.fileName}
         />
 
         {/* RIGHT: Detailed Report Sections */}
@@ -297,53 +367,77 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
 
               <div className="text-right">
                 <span className="text-xs font-mono font-bold text-[#16B889] bg-[#DDF5EC] border border-[#BDEBDC] px-3 py-1 rounded-full">
-                  {report.categories.content.quantifiedAchievementsCount} Quantified Metrics Found
+                  {currentReport.categories.content.quantifiedAchievementsCount} Quantified Metrics Found
                 </span>
               </div>
             </div>
 
             <div className="space-y-4">
-              {report.categories.content.weakBullets.length === 0 ? (
+              {currentReport.categories.content.weakBullets.length === 0 ? (
                 <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 flex items-center gap-2">
                   <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                   No weak or generic bullet points detected. Excellent work!
                 </div>
               ) : (
-                report.categories.content.weakBullets.map((bullet, idx) => (
-                  <div
-                    key={idx}
-                    className="p-5 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3 hover:border-slate-300 transition-all"
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <span className="text-[11px] font-bold text-rose-700 uppercase tracking-wider bg-rose-100 border border-rose-200 px-2 py-0.5 rounded">
-                        WEAK BULLET #{idx + 1}
-                      </span>
+                currentReport.categories.content.weakBullets.map((bullet, idx) => {
+                  const isResolved = (bullet as any).resolved;
+                  return (
+                    <div
+                      key={idx}
+                      className={`p-5 rounded-xl border transition-all space-y-3 ${
+                        isResolved
+                          ? 'border-emerald-300 bg-emerald-50/40 shadow-xs'
+                          : 'border-slate-200 bg-slate-50/50 hover:border-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                          <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${
+                            isResolved
+                              ? 'text-emerald-800 bg-emerald-100 border-emerald-300'
+                              : 'text-rose-700 bg-rose-100 border-rose-200'
+                          }`}>
+                            {isResolved ? '✓ IMPROVED' : `WEAK BULLET #${idx + 1}`}
+                          </span>
+                          {isResolved && (
+                            <span className="text-[10px] text-emerald-700 font-semibold">
+                              Applied to analysis report
+                            </span>
+                          )}
+                        </div>
 
-                      <button
-                        onClick={() => openFixer(bullet.original, bullet.reason)}
-                        className="text-xs font-semibold bg-[#16B889] hover:bg-[#129A72] text-white px-3.5 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <Sparkles className="w-3.5 h-3.5" />
-                        Fix this
-                      </button>
-                    </div>
+                        <button
+                          onClick={() => openFixer(bullet.original, bullet.reason)}
+                          className="text-xs font-semibold bg-[#16B889] hover:bg-[#129A72] text-white px-3.5 py-1.5 rounded-lg shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                          <Sparkles className="w-3.5 h-3.5" />
+                          {isResolved ? 'Re-edit' : 'Fix this'}
+                        </button>
+                      </div>
 
-                    <p className="text-xs font-mono text-slate-800 bg-white p-3 rounded-lg border border-slate-200">
-                      • "{bullet.original}"
-                    </p>
-
-                    <div className="text-xs text-slate-600">
-                      <span className="font-bold text-slate-900">Why it needs improvement:</span> {bullet.reason}
-                    </div>
-
-                    <div className="p-3 bg-emerald-50/80 border border-emerald-200 rounded-lg text-xs text-emerald-950">
-                      <span className="font-bold text-emerald-900 block mb-0.5">Suggested Improvement:</span>
-                      <p className="font-mono text-emerald-800">
-                        • {bullet.suggestion}
+                      <p className="text-xs font-mono text-slate-800 bg-white p-3 rounded-lg border border-slate-200">
+                        • "{bullet.original}"
                       </p>
+
+                      <div className="text-xs text-slate-600">
+                        <span className="font-bold text-slate-900">Why it needs improvement:</span> {bullet.reason}
+                      </div>
+
+                      <div className={`p-3 rounded-lg border text-xs ${
+                        isResolved
+                          ? 'bg-emerald-100/70 border-emerald-300 text-emerald-950'
+                          : 'bg-emerald-50/80 border-emerald-200 text-emerald-950'
+                      }`}>
+                        <span className="font-bold text-emerald-900 block mb-0.5">
+                          {isResolved ? 'Active Improved Statement:' : 'Suggested Improvement:'}
+                        </span>
+                        <p className="font-mono text-emerald-800">
+                          • {bullet.suggestion}
+                        </p>
+                      </div>
                     </div>
-                  </div>
-                ))
+                  );
+                })
               )}
             </div>
           </section>

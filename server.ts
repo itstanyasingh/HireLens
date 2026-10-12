@@ -519,6 +519,32 @@ Return JSON format:
   }
 });
 
+// Explicit Favicon & Manifest routes with cache headers
+app.get('/favicon.ico', (req, res) => {
+  res.setHeader('Content-Type', 'image/x-icon');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(__dirname, 'public', 'favicon.ico'));
+});
+
+app.get(['/favicon.png', '/favicon-32x32.png', '/favicon-16x16.png', '/apple-touch-icon.png'], (req, res) => {
+  res.setHeader('Content-Type', 'image/png');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  const filename = path.basename(req.path);
+  res.sendFile(path.join(__dirname, 'public', filename));
+});
+
+app.get('/favicon.svg', (req, res) => {
+  res.setHeader('Content-Type', 'image/svg+xml');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(__dirname, 'public', 'favicon.svg'));
+});
+
+app.get('/site.webmanifest', (req, res) => {
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.setHeader('Cache-Control', 'public, max-age=86400');
+  res.sendFile(path.join(__dirname, 'public', 'site.webmanifest'));
+});
+
 // Vite Middleware for Development
 if (process.env.NODE_ENV !== 'production') {
   const { createServer: createViteServer } = await import('vite');
@@ -526,7 +552,7 @@ if (process.env.NODE_ENV !== 'production') {
     server: { middlewareMode: true },
     appType: 'custom',
   });
-  app.use(express.static(path.join(__dirname, 'public')));
+  app.use(express.static(path.join(__dirname, 'public'), { maxAge: '1d' }));
   app.use(vite.middlewares);
   app.use('*', async (req, res, next) => {
     const url = req.originalUrl;
