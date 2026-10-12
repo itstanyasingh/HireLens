@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { GoogleGenAI, Type } from '@google/genai';
 
@@ -489,23 +490,25 @@ Return JSON format:
       }
     }
 
-    // Fallback bullet variations
+    // Fallback bullet variations with clean verb replacement
     const clean = originalBullet.replace(/^[•\-\*\s]+/, '').trim();
+    const actionCore = clean.replace(/^(worked on|worked with|helped with|helped build|assisted with|assisted in|responsible for|handled|did|made|participated in|supported|involved in|tasks included|duties included)\s*/i, '').trim();
+
     return res.json({
       variations: [
         {
           type: 'Metric & Scale Focus',
-          bullet: `Engineered ${clean.toLowerCase()} utilizing reusable architecture, driving a [25%] increase in processing throughput across [10,000+] active sessions.`,
+          bullet: `Engineered ${actionCore} utilizing modern scalable patterns, driving a [25%] increase in operational throughput across [10,000+] active sessions.`,
           explanation: 'Replaces passive language with active engineering verb and quantifiable efficiency metric.'
         },
         {
           type: 'Technical & Quality Focus',
-          bullet: `Architected and deployed ${clean.toLowerCase()} with comprehensive unit tests and CI/CD integration, reducing defect rates by [30%].`,
+          bullet: `Architected and deployed ${actionCore} with comprehensive automated testing and CI/CD pipelines, reducing defect rates by [30%].`,
           explanation: 'Emphasizes code quality, technical execution, and reduction of engineering errors.'
         },
         {
           type: 'Business Outcome Focus',
-          bullet: `Spearheaded ${clean.toLowerCase()} in collaboration with cross-functional teams, accelerating product feature delivery by [2 weeks].`,
+          bullet: `Spearheaded ${actionCore} in collaboration with cross-functional teams, accelerating product delivery velocity by [2 weeks].`,
           explanation: 'Highlights cross-functional leadership, execution velocity, and delivery timeline impact.'
         }
       ]
@@ -523,28 +526,13 @@ if (process.env.NODE_ENV !== 'production') {
     server: { middlewareMode: true },
     appType: 'custom',
   });
+  app.use(express.static(path.join(__dirname, 'public')));
   app.use(vite.middlewares);
   app.use('*', async (req, res, next) => {
     const url = req.originalUrl;
     try {
-      let template = await vite.transformIndexHtml(
-        url,
-        `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HireLens — AI Resume Checker & Job Recommendation Platform</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-  </head>
-  <body class="bg-[#FAFAF9] text-[#18181B] antialiased selection:bg-indigo-600 selection:text-white">
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
-</html>`
-      );
+      const rawIndex = fs.readFileSync(path.resolve(__dirname, 'index.html'), 'utf-8');
+      const template = await vite.transformIndexHtml(url, rawIndex);
       res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
     } catch (e: any) {
       vite.ssrFixStacktrace(e);
@@ -553,6 +541,7 @@ if (process.env.NODE_ENV !== 'production') {
   });
 } else {
   // Production static files
+  app.use(express.static(path.join(__dirname, 'public')));
   app.use(express.static(path.join(__dirname, 'dist')));
   app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'dist', 'index.html'));

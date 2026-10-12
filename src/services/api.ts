@@ -131,21 +131,23 @@ export async function fixBulletPoint(originalBullet: string, targetRole: string 
   }
 
   const clean = originalBullet.replace(/^[•\-\*\s]+/, '').trim();
+  const actionCore = clean.replace(/^(worked on|worked with|helped with|helped build|assisted with|assisted in|responsible for|handled|did|made|participated in|supported|involved in|tasks included|duties included)\s*/i, '').trim();
+
   return {
     variations: [
       {
         type: 'Metric & Scale Focus',
-        bullet: `Architected and launched ${clean.toLowerCase()} using modern framework best practices, achieving a [35%] boost in operational throughput for [10k+] monthly users.`,
+        bullet: `Architected and launched ${actionCore} using modern scalable patterns, achieving a [35%] boost in operational throughput for [10k+] monthly users.`,
         explanation: 'Adds executive action verb and quantifiable efficiency metric.'
       },
       {
         type: 'Technical Execution Focus',
-        bullet: `Engineered ${clean.toLowerCase()} with modular state management and automated CI/CD unit testing, reducing client-side bug reports by [40%].`,
+        bullet: `Engineered ${actionCore} with modular state management and automated CI/CD unit testing, reducing defect rates by [40%].`,
         explanation: 'Highlights code reliability, engineering depth, and error prevention.'
       },
       {
         type: 'Business Impact Focus',
-        bullet: `Spearheaded ${clean.toLowerCase()} aligned with product analytics roadmap, reducing feature delivery lifecycle by [2 weeks].`,
+        bullet: `Spearheaded ${actionCore} aligned with cross-functional roadmaps, reducing feature delivery lifecycle by [2 weeks].`,
         explanation: 'Focuses on cross-functional impact, delivery speed, and business outcomes.'
       }
     ]
