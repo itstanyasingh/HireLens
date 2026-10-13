@@ -23,9 +23,20 @@ import {
 import { PricingModal } from './PricingModal';
 import { AuthModal } from './AuthModal';
 
+export type NavTab = 
+  | 'landing' 
+  | 'report' 
+  | 'matcher' 
+  | 'history' 
+  | 'builder' 
+  | 'tailor' 
+  | 'cover-letter' 
+  | 'tracker' 
+  | 'interview-prep';
+
 interface HeaderProps {
-  activeTab: 'landing' | 'report' | 'matcher' | 'history';
-  onNavigate: (tab: 'landing' | 'report' | 'matcher' | 'history') => void;
+  activeTab: NavTab;
+  onNavigate: (tab: NavTab) => void;
   onScrollToSection?: (sectionId: string) => void;
   hasActiveReport?: boolean;
 }
@@ -57,7 +68,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleNavAction = (
     sectionId?: string,
-    tab: 'landing' | 'report' | 'matcher' | 'history' = 'landing'
+    tab: NavTab = 'landing'
   ) => {
     setOpenDropdown(null);
     setMobileMenuOpen(false);
@@ -174,48 +185,70 @@ export const Header: React.FC<HeaderProps> = ({
                 </button>
 
                 {openDropdown === 'tools' && (
-                  <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-2xl border border-[#E2E8E5] shadow-xl p-2.5 space-y-1 z-50 animate-fadeIn">
+                  <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl border border-[#E2E8E5] shadow-xl p-2.5 space-y-1 z-50 animate-fadeIn">
                     <button
-                      onClick={() => handleNavAction('sec-features', 'landing')}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
-                    >
-                      <Layers className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
-                      <div>
-                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Diagnostic Audit (7 Pillars)</div>
-                        <div className="text-[11px] text-[#788582]">ATS, Content, Bias, and Recruiter signals</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavAction('sec-tailoring', 'landing')}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
-                    >
-                      <Target className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
-                      <div>
-                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Resume Tailoring</div>
-                        <div className="text-[11px] text-[#788582]">Custom keywords & skill overlap</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavAction('sec-recruiter', 'landing')}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
-                    >
-                      <Eye className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
-                      <div>
-                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Human Screening Check</div>
-                        <div className="text-[11px] text-[#788582]">Review project evidence & metrics</div>
-                      </div>
-                    </button>
-
-                    <button
-                      onClick={() => handleNavAction('sec-builder', 'landing')}
+                      onClick={() => handleNavAction(undefined, 'builder')}
                       className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
                     >
                       <SlidersHorizontal className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
                       <div>
                         <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Resume Builder</div>
-                        <div className="text-[11px] text-[#788582]">ATS-optimized PDF template editor</div>
+                        <div className="text-[11px] text-[#788582]">Live ATS document studio & PDF export</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction(undefined, 'tailor')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
+                    >
+                      <Target className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Resume Tailor</div>
+                        <div className="text-[11px] text-[#788582]">Target job keyword matching & bullet rewrites</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction(undefined, 'cover-letter')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
+                    >
+                      <FileText className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Cover Letter Generator</div>
+                        <div className="text-[11px] text-[#788582]">Personalized, high-converting application letters</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction(undefined, 'tracker')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
+                    >
+                      <Layers className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Job Application Tracker</div>
+                        <div className="text-[11px] text-[#788582]">Track interviews, follow-ups, and offers</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction(undefined, 'interview-prep')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
+                    >
+                      <Sparkles className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Interview Prep Coach</div>
+                        <div className="text-[11px] text-[#788582]">STAR questions, trade-offs, and practice notes</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction('sec-features', 'landing')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group border-t border-[#F0F4F2] pt-2"
+                    >
+                      <Eye className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Diagnostic Audit (7 Pillars)</div>
+                        <div className="text-[11px] text-[#788582]">ATS, Content, Bias, and Recruiter signals</div>
                       </div>
                     </button>
                   </div>

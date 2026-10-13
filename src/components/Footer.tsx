@@ -2,7 +2,7 @@ import React from 'react';
 import { ShieldCheck } from 'lucide-react';
 
 interface FooterProps {
-  onNavigate: (tab: 'landing' | 'report' | 'matcher' | 'history') => void;
+  onNavigate: (tab: 'landing' | 'report' | 'matcher' | 'history' | 'builder' | 'tailor' | 'cover-letter' | 'tracker' | 'interview-prep') => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
@@ -25,14 +25,17 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate }) => {
             </p>
           </div>
 
-          {/* Column 2: Product */}
+          {/* Column 2: Product & Tools */}
           <div className="space-y-2.5">
-            <span className="font-bold text-[#263333] uppercase tracking-wider block text-[11px]">Product</span>
-            <ul className="space-y-2 text-[13px]">
+            <span className="font-bold text-[#263333] uppercase tracking-wider block text-[11px]">Product & Tools</span>
+            <ul className="space-y-1.5 text-[13px]">
               <li><button onClick={() => onNavigate('landing')} className="hover:text-[#159A78] transition-colors cursor-pointer">Resume Checker</button></li>
+              <li><button onClick={() => onNavigate('builder')} className="hover:text-[#159A78] transition-colors cursor-pointer">Resume Builder</button></li>
+              <li><button onClick={() => onNavigate('tailor')} className="hover:text-[#159A78] transition-colors cursor-pointer">Resume Tailor</button></li>
               <li><button onClick={() => onNavigate('matcher')} className="hover:text-[#159A78] transition-colors cursor-pointer">Job Matcher</button></li>
-              <li><button onClick={() => onNavigate('landing')} className="hover:text-[#159A78] transition-colors cursor-pointer">Skill Gap Analysis</button></li>
-              <li><button onClick={() => onNavigate('history')} className="hover:text-[#159A78] transition-colors cursor-pointer">History</button></li>
+              <li><button onClick={() => onNavigate('cover-letter')} className="hover:text-[#159A78] transition-colors cursor-pointer">Cover Letter</button></li>
+              <li><button onClick={() => onNavigate('tracker')} className="hover:text-[#159A78] transition-colors cursor-pointer">Job Tracker</button></li>
+              <li><button onClick={() => onNavigate('interview-prep')} className="hover:text-[#159A78] transition-colors cursor-pointer">Interview Prep</button></li>
             </ul>
           </div>
 

@@ -1,18 +1,69 @@
 import React, { useState, useEffect } from 'react';
-import { Header } from './components/Header';
+import { Header, NavTab } from './components/Header';
 import { Footer } from './components/Footer';
 import { LandingPage } from './pages/LandingPage';
 import { ReportPage } from './pages/ReportPage';
 import { MatcherPage } from './pages/MatcherPage';
 import { HistoryPage } from './pages/HistoryPage';
+import { ResumeBuilderPage } from './pages/ResumeBuilderPage';
+import { ResumeTailorPage } from './pages/ResumeTailorPage';
+import { CoverLetterPage } from './pages/CoverLetterPage';
+import { JobTrackerPage } from './pages/JobTrackerPage';
+import { InterviewPrepPage } from './pages/InterviewPrepPage';
 import { AnalysisProgress } from './components/AnalysisProgress';
 import { analyzeResume, AnalysisReport, getHistory } from './services/api';
 
+export type AppTab = NavTab | 'loading';
+
 export default function App() {
-  const [activeTab, setActiveTab] = useState<'landing' | 'report' | 'matcher' | 'history' | 'loading'>('landing');
+  const [activeTab, setActiveTab] = useState<AppTab>('landing');
   const [activeReport, setActiveReport] = useState<AnalysisReport | null>(null);
   const [loadingFileName, setLoadingFileName] = useState<string>('Resume.pdf');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Navigate helper that scrolls to top and updates URL hash
+  const navigateTo = (tab: AppTab) => {
+    setActiveTab(tab);
+    if (tab !== 'landing' && tab !== 'loading') {
+      window.location.hash = tab;
+    } else if (tab === 'landing') {
+      if (window.location.hash) {
+        history.replaceState(null, '', window.location.pathname);
+      }
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  };
+
+  // Scroll to top automatically whenever activeTab changes
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+  }, [activeTab]);
+
+  // Sync with window.location.hash for direct links and browser back/forward
+  useEffect(() => {
+    const handleHash = () => {
+      const rawHash = window.location.hash.replace('#', '').trim();
+      const validTabs: AppTab[] = [
+        'landing',
+        'report',
+        'matcher',
+        'history',
+        'builder',
+        'tailor',
+        'cover-letter',
+        'tracker',
+        'interview-prep'
+      ];
+      if (rawHash && validTabs.includes(rawHash as AppTab)) {
+        setActiveTab(rawHash as AppTab);
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      }
+    };
+
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
 
   // Auto load recent history on start if available & ensure favicon is active
   useEffect(() => {
@@ -40,8 +91,9 @@ export default function App() {
       setActiveReport(report);
     } catch (err: any) {
       console.error('Analysis error:', err);
-      alert(err?.message || "Unable to read this resume correctly. We couldn't extract readable text from this file. Please upload a text-based PDF or DOCX file.");
-      setActiveTab('landing');
+      // Soft feedback instead of blocking alert
+      console.warn(err?.message || "Unable to read resume");
+      navigateTo('landing');
     } finally {
       setIsSubmitting(false);
     }
@@ -49,9 +101,9 @@ export default function App() {
 
   const handleLoadingFinished = () => {
     if (activeReport) {
-      setActiveTab('report');
+      navigateTo('report');
     } else {
-      setActiveTab('landing');
+      navigateTo('landing');
     }
   };
 
@@ -68,8 +120,8 @@ export default function App() {
       {/* Top Application Header */}
       {activeTab !== 'loading' && (
         <Header
-          activeTab={activeTab}
-          onNavigate={(tab) => setActiveTab(tab)}
+          activeTab={activeTab as NavTab}
+          onNavigate={(tab) => navigateTo(tab)}
           onScrollToSection={handleScrollToSection}
           hasActiveReport={!!activeReport}
         />
@@ -88,6 +140,7 @@ export default function App() {
           <LandingPage
             onStartAnalysis={handleStartAnalysis}
             isLoading={isSubmitting}
+            onNavigate={(tab) => navigateTo(tab)}
           />
         )}
 
@@ -95,7 +148,7 @@ export default function App() {
           <ReportPage
             report={activeReport}
             onAnalyzeAnother={() => {
-              setActiveTab('landing');
+              navigateTo('landing');
               setTimeout(() => handleScrollToSection('sec-upload'), 100);
             }}
           />
@@ -105,8 +158,9 @@ export default function App() {
           <MatcherPage
             onReportGenerated={(rep) => {
               setActiveReport(rep);
-              setActiveTab('report');
+              navigateTo('report');
             }}
+            onBackToHome={() => navigateTo('landing')}
           />
         )}
 
@@ -114,16 +168,48 @@ export default function App() {
           <HistoryPage
             onSelectReport={(rep) => {
               setActiveReport(rep);
-              setActiveTab('report');
+              navigateTo('report');
             }}
-            onNavigateLanding={() => setActiveTab('landing')}
+            onNavigateLanding={() => navigateTo('landing')}
+          />
+        )}
+
+        {activeTab === 'builder' && (
+          <ResumeBuilderPage
+            onBackToHome={() => navigateTo('landing')}
+            onSendToChecker={(text, name) => handleStartAnalysis(text, name)}
+          />
+        )}
+
+        {activeTab === 'tailor' && (
+          <ResumeTailorPage
+            onBackToHome={() => navigateTo('landing')}
+            onOpenBuilder={() => navigateTo('builder')}
+          />
+        )}
+
+        {activeTab === 'cover-letter' && (
+          <CoverLetterPage
+            onBackToHome={() => navigateTo('landing')}
+          />
+        )}
+
+        {activeTab === 'tracker' && (
+          <JobTrackerPage
+            onBackToHome={() => navigateTo('landing')}
+          />
+        )}
+
+        {activeTab === 'interview-prep' && (
+          <InterviewPrepPage
+            onBackToHome={() => navigateTo('landing')}
           />
         )}
       </main>
 
       {/* Footer */}
       {activeTab !== 'loading' && (
-        <Footer onNavigate={(tab) => setActiveTab(tab)} />
+        <Footer onNavigate={(tab) => navigateTo(tab)} />
       )}
 
     </div>

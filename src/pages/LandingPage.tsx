@@ -14,9 +14,10 @@ import { FinalCTA } from '../components/FinalCTA';
 interface LandingPageProps {
   onStartAnalysis: (resumeText: string, fileName: string, jobDescription?: string) => void;
   isLoading: boolean;
+  onNavigate?: (tab: 'landing' | 'report' | 'matcher' | 'history' | 'builder' | 'tailor' | 'cover-letter' | 'tracker' | 'interview-prep') => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ onStartAnalysis, isLoading }) => {
+export const LandingPage: React.FC<LandingPageProps> = ({ onStartAnalysis, isLoading, onNavigate }) => {
   const scrollToUpload = () => {
     const el = document.getElementById('sec-upload');
     if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -38,16 +39,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStartAnalysis, isLoa
       <DarkFeatureSection />
 
       {/* 4. SECTION 2: JOB TAILORING (Text on Left, Large Layered Visual on Right) */}
-      <TailoringSection />
+      <TailoringSection onOpenTailor={() => onNavigate?.('tailor')} />
 
       {/* 5. SECTION 3: HUMAN SCREENING (Large Layered Visual on Left, Text on Right) */}
       <RecruiterSection />
 
       {/* 6. RESUME BUILDER COMPONENT */}
-      <ResumeBuilderBlock />
+      <ResumeBuilderBlock onOpenBuilder={() => onNavigate?.('builder')} />
 
       {/* 7. PUT YOUR RESUME SCORE TO WORK */}
-      <ImprovementSection />
+      <ImprovementSection onNavigate={onNavigate} />
 
       {/* 8. CAREER RESOURCES */}
       <ResourceSection />

@@ -519,6 +519,354 @@ Return JSON format:
   }
 });
 
+// POST /api/generate-cover-letter
+app.post('/api/generate-cover-letter', async (req, res) => {
+  try {
+    const { 
+      candidateName = 'Alex Morgan',
+      jobTitle = 'Software Engineer',
+      companyName = 'Acme Corp',
+      experienceSnippet = '',
+      tone = 'Professional & Confident'
+    } = req.body;
+
+    if (!jobTitle || !companyName) {
+      return res.status(400).json({ error: 'Job title and Company name are required.' });
+    }
+
+    const ai = getGenAI();
+    if (ai) {
+      try {
+        const prompt = `
+You are an executive career advisor and professional resume writer.
+Write a compelling, high-converting cover letter tailored for:
+Candidate Name: ${candidateName}
+Target Role: ${jobTitle}
+Company: ${companyName}
+Tone: ${tone}
+Key Experience / Background:
+${experienceSnippet || 'Strong software engineering background with emphasis on scalable systems, web performance, and reliable teamwork.'}
+
+Requirements:
+1. Include Date and recipient placeholders.
+2. Hook the hiring manager with enthusiasm for ${companyName} and relevant qualifications for ${jobTitle}.
+3. Highlight 2-3 specific achievements with quantifiable metrics and active verbs.
+4. Explain alignment with ${companyName}'s mission and technical standard.
+5. Provide a confident, proactive call to action.
+6. Return JSON format:
+{
+  "subject": "Application for ${jobTitle} - ${candidateName}",
+  "content": "string (multiline formatted letter)",
+  "highlights": ["highlight 1", "highlight 2", "highlight 3"]
+}
+`;
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: { responseMimeType: 'application/json' }
+        });
+        if (response.text) {
+          return res.json(JSON.parse(response.text));
+        }
+      } catch (err) {
+        console.warn('Gemini cover letter generation failed, using heuristic template:', err);
+      }
+    }
+
+    // Heuristic Cover Letter Fallback
+    const letterDate = new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+    const content = `${letterDate}
+
+Hiring Team
+${companyName}
+
+Dear Hiring Manager,
+
+I am writing to express my strong enthusiasm for the ${jobTitle} role at ${companyName}. Having followed ${companyName}'s impactful work in building resilient, user-centric technology, I am excited by the opportunity to bring my hands-on background and engineering rigor to your team.
+
+${experienceSnippet.trim().length > 20 
+  ? `In my previous work, I focused on turning complex product specifications into dependable, maintainable software. Specifically, ${experienceSnippet.trim().slice(0, 300)}.`
+  : `Throughout my career, I have specialized in building robust software solutions that drive measurable business outcomes. In my recent roles, I architected scalable services that improved core workflow latency by 28% and collaborated closely with cross-functional product stakeholders to ship features ahead of schedule.`}
+
+What excites me most about ${companyName} is your commitment to engineering excellence and sustainable team velocity. I thrive in environments where data-driven problem solving and ownership are celebrated, and I am confident that my experience with modern architectural patterns will allow me to contribute immediately to your product milestones.
+
+I welcome the chance to discuss how my skill set and proactive approach align with ${companyName}'s growth goals. Thank you for your time and consideration.
+
+Sincerely,
+
+${candidateName}`;
+
+    return res.json({
+      subject: `Application for ${jobTitle} - ${candidateName}`,
+      content,
+      highlights: [
+        `Customized for ${jobTitle} at ${companyName}`,
+        'Quantifiable impact narrative and action verbs',
+        'Direct alignment with team velocity and technical goals'
+      ]
+    });
+
+  } catch (error: any) {
+    console.error('Error generating cover letter:', error);
+    res.status(500).json({ error: 'Failed to generate cover letter.' });
+  }
+});
+
+// POST /api/generate-interview-prep
+app.post('/api/generate-interview-prep', async (req, res) => {
+  try {
+    const {
+      jobTitle = 'Software Engineer',
+      companyName = 'Target Company',
+      jobDescription = '',
+      experienceLevel = 'Mid-Senior'
+    } = req.body;
+
+    if (!jobTitle) {
+      return res.status(400).json({ error: 'Job title is required.' });
+    }
+
+    const ai = getGenAI();
+    if (ai) {
+      try {
+        const prompt = `
+You are an expert technical recruiter and interview coach.
+Generate a comprehensive interview preparation guide for:
+Job Title: ${jobTitle}
+Company: ${companyName}
+Experience Level: ${experienceLevel}
+Job Requirements / Description:
+${jobDescription || 'Standard requirements for modern high-performance engineering.'}
+
+Provide JSON conforming strictly to:
+{
+  "roleOverview": "Brief 2-sentence summary of what interviewers screen for in this role",
+  "behavioral": [
+    {
+      "question": "string",
+      "evaluates": "what recruiters/interviewers look for",
+      "starStrategy": "step-by-step guidance on answering using Situation, Task, Action, Result",
+      "suggestedKeywords": ["keyword1", "keyword2"]
+    }
+  ],
+  "technical": [
+    {
+      "question": "string",
+      "evaluates": "technical competencies and system concepts evaluated",
+      "starStrategy": "how to break down problem, trade-offs, and architecture",
+      "suggestedKeywords": ["keyword1", "keyword2"]
+    }
+  ],
+  "situational": [
+    {
+      "question": "string",
+      "evaluates": "conflict resolution, prioritization, stakeholder communication",
+      "starStrategy": "recommended diplomatic and impact-focused approach",
+      "suggestedKeywords": ["keyword1", "keyword2"]
+    }
+  ]
+}
+Generate at least 3 questions in each category. Return ONLY JSON.
+`;
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: { responseMimeType: 'application/json' }
+        });
+        if (response.text) {
+          return res.json(JSON.parse(response.text));
+        }
+      } catch (err) {
+        console.warn('Gemini interview prep generation failed, using heuristic engine:', err);
+      }
+    }
+
+    // Heuristic Interview Prep Fallback
+    return res.json({
+      roleOverview: `For a ${experienceLevel} ${jobTitle} at ${companyName}, interviewers evaluate deep domain execution, system scalability, and the ability to articulate trade-offs clearly under ambiguity.`,
+      behavioral: [
+        {
+          question: `Tell me about a challenging project where requirements changed midway through delivery.`,
+          evaluates: 'Agility, communication with stakeholders, and practical prioritization.',
+          starStrategy: 'Situation: Outline the initial project scope. Task: Explain the sudden shift in constraints. Action: Detail how you re-estimated timeline and communicated with product teams. Result: Highlight on-time delivery with zero critical regression.',
+          suggestedKeywords: ['Scope management', 'Stakeholder alignment', 'Trade-off analysis', 'Delivery velocity']
+        },
+        {
+          question: `Describe a scenario where you disagreed with a senior engineer or product decision. How did you resolve it?`,
+          evaluates: 'Emotional intelligence, data-driven reasoning, and cross-functional alignment.',
+          starStrategy: 'Frame the disagreement around user/system impact rather than personal preference. Present how you gathered metrics or benchmarks to facilitate an objective team decision.',
+          suggestedKeywords: ['Data-driven consensus', 'Objective trade-offs', 'Professional collaboration', 'Shared goals']
+        },
+        {
+          question: `Can you walk me through your biggest technical failure or production incident and what you learned?`,
+          evaluates: 'Accountability, blameless root-cause analysis, and preventative engineering.',
+          starStrategy: 'Own the mistake directly without deflecting. Emphasize the mitigation protocol, post-mortem analysis, and automated guards put in place to ensure it never recurs.',
+          suggestedKeywords: ['Root-cause analysis', 'Incident mitigation', 'Post-mortem', 'Automated safeguards']
+        }
+      ],
+      technical: [
+        {
+          question: `How would you architect a high-throughput API service to handle 10,000+ requests per second with strict latency constraints?`,
+          evaluates: 'Caching tiers, database indexing, horizontal scaling, and asynchronous job processing.',
+          starStrategy: 'Start with high-level architecture diagram. Address load balancing, Redis caching layer, connection pooling, and message queues (e.g. Kafka/RabbitMQ) for deferred execution.',
+          suggestedKeywords: ['Redis caching', 'Horizontal auto-scaling', 'Connection pooling', 'Asynchronous queues']
+        },
+        {
+          question: `Explain how you diagnose and fix a subtle performance bottleneck or memory leak in production.`,
+          evaluates: 'Observability, APM profiling tools, memory dumps, and database query optimization.',
+          starStrategy: 'Walk through systematic diagnosis: metrics monitoring, APM traces, flame graphs, database slow query logs, followed by surgical verification in staging before deployment.',
+          suggestedKeywords: ['APM telemetry', 'Query explain plans', 'Heap analysis', 'Micro-benchmarking']
+        },
+        {
+          question: `What criteria do you use when choosing between a relational database (PostgreSQL) and a document store (MongoDB)?`,
+          evaluates: 'ACID compliance, schema evolution, query pattern predictability, and data normalization.',
+          starStrategy: 'Compare data relational integrity vs write speed, transaction semantics, indexing capabilities, and long-term reporting requirements.',
+          suggestedKeywords: ['ACID transactions', 'Relational constraints', 'Schema migrations', 'Read vs Write workloads']
+        }
+      ],
+      situational: [
+        {
+          question: `A critical deadline is in 48 hours, but you discover a bug that degrades latency by 15% under peak loads. What do you do?`,
+          evaluates: 'Risk assessment, stakeholder escalation, and feature gating.',
+          starStrategy: 'Quantify actual user impact. Present 3 options to leadership: launch with feature flag off, release hotfix with scoped rollback plan, or negotiate a 24h delay with clear rationale.',
+          suggestedKeywords: ['Feature flagging', 'Risk matrix', 'Rollback strategy', 'Clear escalation']
+        },
+        {
+          question: `How do you onboard new engineers and maintain consistent code quality across a rapidly scaling team?`,
+          evaluates: 'Documentation discipline, automated CI linting/testing, and constructive PR reviews.',
+          starStrategy: 'Describe hands-on pairing, comprehensive runbooks, strict PR review templates, and automated linter/type checks that run in CI before merge.',
+          suggestedKeywords: ['CI/CD gates', 'Code review culture', 'Living documentation', 'Mentorship']
+        }
+      ]
+    });
+
+  } catch (error: any) {
+    console.error('Error generating interview prep:', error);
+    res.status(500).json({ error: 'Failed to generate interview prep.' });
+  }
+});
+
+// POST /api/tailor-resume
+app.post('/api/tailor-resume', async (req, res) => {
+  try {
+    const { resumeText = '', jobDescription = '', targetRole = '' } = req.body;
+
+    if (!resumeText || resumeText.trim().length < 20) {
+      return res.status(400).json({ error: 'Please provide valid resume text.' });
+    }
+    if (!jobDescription || jobDescription.trim().length < 20) {
+      return res.status(400).json({ error: 'Please provide a target job description.' });
+    }
+
+    const ai = getGenAI();
+    if (ai) {
+      try {
+        const prompt = `
+You are an expert ATS optimization consultant.
+Compare this resume against the target job description and generate precise tailoring suggestions:
+
+TARGET ROLE: ${targetRole || 'Target Position'}
+TARGET JOB DESCRIPTION:
+"""
+${jobDescription}
+"""
+
+RESUME TEXT:
+"""
+${resumeText}
+"""
+
+Return pure JSON:
+{
+  "tailorScore": number (0-100),
+  "matchedKeywords": ["keyword1", "keyword2", ...],
+  "missingKeywords": ["keyword1", "keyword2", ...],
+  "bulletRewrites": [
+    {
+      "original": "string",
+      "tailored": "string",
+      "alignmentReason": "string"
+    }
+  ],
+  "sectionAdvice": [
+    { "section": "Summary" | "Experience" | "Skills", "advice": "string" }
+  ]
+}
+`;
+        const response = await ai.models.generateContent({
+          model: 'gemini-2.5-flash',
+          contents: prompt,
+          config: { responseMimeType: 'application/json' }
+        });
+        if (response.text) {
+          return res.json(JSON.parse(response.text));
+        }
+      } catch (err) {
+        console.warn('Gemini tailor failed, using heuristic engine:', err);
+      }
+    }
+
+    // Heuristic Tailoring Fallback
+    const targetKeywords = [
+      'React', 'TypeScript', 'Node.js', 'Python', 'AWS', 'Docker', 'Kubernetes',
+      'SQL', 'PostgreSQL', 'Redis', 'GraphQL', 'REST API', 'CI/CD', 'Microservices',
+      'System Design', 'Agile', 'Unit Testing', 'Tailwind CSS', 'FastAPI'
+    ];
+
+    const jdLower = jobDescription.toLowerCase();
+    const resumeLower = resumeText.toLowerCase();
+
+    const required = targetKeywords.filter(k => jdLower.includes(k.toLowerCase()));
+    if (required.length === 0) {
+      required.push('React', 'TypeScript', 'Node.js', 'REST API', 'SQL', 'AWS');
+    }
+
+    const matched = required.filter(k => resumeLower.includes(k.toLowerCase()));
+    const missing = required.filter(k => !resumeLower.includes(k.toLowerCase()));
+
+    const matchRatio = required.length > 0 ? (matched.length / required.length) : 0.75;
+    const tailorScore = Math.min(96, Math.max(50, Math.round(matchRatio * 100)));
+
+    return res.json({
+      tailorScore,
+      matchedKeywords: matched,
+      missingKeywords: missing,
+      bulletRewrites: [
+        {
+          original: 'Developed web applications using React and TypeScript.',
+          tailored: `Architected full-stack features utilizing ${matched.slice(0, 3).join(', ')}, optimizing client performance and reducing API latency by 25%.`,
+          alignmentReason: `Incorporates verified tech stack keywords from the job posting and pairs them with business efficiency numbers.`
+        },
+        {
+          original: 'Collaborated with cross-functional teams to build APIs.',
+          tailored: `Engineered secure RESTful microservices with automated testing, accelerating feature deployment cycles by 30%.`,
+          alignmentReason: 'Replaces passive collaboration verb with active engineering impact and CI/CD metrics.'
+        }
+      ],
+      sectionAdvice: [
+        {
+          section: 'Summary',
+          advice: `Explicitly align your title in the summary with "${targetRole || 'Target Role'}" to immediately pass the initial ATS title-matching filter.`
+        },
+        {
+          section: 'Skills',
+          advice: missing.length > 0
+            ? `Incorporate missing keywords (${missing.slice(0, 3).join(', ')}) into your technical competencies block.`
+            : 'Group your technical stack into clear categories (Languages, Frameworks, Cloud & Databases) for rapid scanner parsing.'
+        },
+        {
+          section: 'Experience',
+          advice: 'Add at least one measurable business metric (percentage, revenue, latency reduction) to your top 3 bullet points.'
+        }
+      ]
+    });
+
+  } catch (error: any) {
+    console.error('Error in /api/tailor-resume:', error);
+    res.status(500).json({ error: 'Failed to tailor resume.' });
+  }
+});
+
 // Explicit Favicon & Manifest routes with cache headers
 app.get('/favicon.ico', (req, res) => {
   res.setHeader('Content-Type', 'image/x-icon');

@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Move, Download, Check, Sparkles, SlidersHorizontal, Layers } from 'lucide-react';
 
-export const ResumeBuilderBlock: React.FC = () => {
+interface ResumeBuilderBlockProps {
+  onOpenBuilder?: () => void;
+}
+
+export const ResumeBuilderBlock: React.FC<ResumeBuilderBlockProps> = ({ onOpenBuilder }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -96,15 +100,30 @@ export const ResumeBuilderBlock: React.FC = () => {
               </p>
             </div>
 
+            {/* 5. Action Button */}
+            {onOpenBuilder && (
+              <div className="pt-2">
+                <button
+                  onClick={onOpenBuilder}
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-xs font-bold bg-[#16B889] hover:bg-[#139E75] text-white shadow-md hover:shadow-lg transition-all cursor-pointer"
+                >
+                  <SlidersHorizontal className="w-4 h-4" />
+                  <span>Launch Interactive Resume Builder →</span>
+                </button>
+              </div>
+            )}
+
           </div>
 
           {/* RIGHT COLUMN: LARGE ANIMATED PRODUCT PREVIEW COMPOSITION (560–600px wide × 460–520px tall) */}
           <div className="lg:col-span-6 w-full flex items-center justify-center lg:justify-end">
             
             <div 
+              onClick={onOpenBuilder}
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
               className="relative w-full max-w-[580px] min-h-[480px] lg:h-[520px] flex items-center justify-center cursor-pointer group"
+              title="Click to launch interactive Resume Builder"
             >
               
               {/* LAYER 1 (BACK): Pastel Lavender/Mint Offset Panel */}
@@ -162,7 +181,13 @@ export const ResumeBuilderBlock: React.FC = () => {
                     <span className="text-[#16B889] font-bold text-[10px] bg-[#EAF8F3] px-2 py-0.5 rounded-full flex items-center gap-1">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#16B889]"></span> Saved
                     </span>
-                    <button className="bg-[#16B889] text-white px-2.5 py-1 rounded text-[10.5px] font-bold flex items-center gap-1 hover:bg-[#129A72] transition-colors">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onOpenBuilder?.();
+                      }}
+                      className="bg-[#16B889] text-white px-2.5 py-1 rounded text-[10.5px] font-bold flex items-center gap-1 hover:bg-[#129A72] transition-colors cursor-pointer"
+                    >
                       <Download className="w-3 h-3" /> Export PDF
                     </button>
                   </div>

@@ -80,7 +80,14 @@ export const JobRecommendationSection: React.FC = () => {
 
               <div className="pt-3 border-t border-[#E2E8E5] flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[#5F6868]">{job.type}</span>
-                <button className="text-xs font-bold text-[#168F70] hover:underline flex items-center gap-1">
+                <button 
+                  type="button"
+                  onClick={() => {
+                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.company + ' ' + job.title + ' jobs')}`;
+                    window.open(searchUrl, '_blank', 'noopener,noreferrer');
+                  }}
+                  className="text-xs font-bold text-[#168F70] hover:underline flex items-center gap-1 cursor-pointer"
+                >
                   View Opportunity <ArrowUpRight className="w-3.5 h-3.5" />
                 </button>
               </div>

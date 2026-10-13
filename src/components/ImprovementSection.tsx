@@ -8,16 +8,43 @@ import {
   AlertTriangle, 
   Briefcase, 
   MessageSquare, 
-  Compass, 
-  Layers 
+  SlidersHorizontal,
+  RotateCcw,
+  ArrowRight,
+  ExternalLink,
+  Layers,
+  FileText
 } from 'lucide-react';
 
-export const ImprovementSection: React.FC = () => {
+interface ImprovementSectionProps {
+  onNavigate?: (tab: 'landing' | 'report' | 'matcher' | 'history' | 'builder' | 'tailor' | 'cover-letter' | 'tracker' | 'interview-prep') => void;
+}
+
+const DEMO_STORAGE_KEY = 'hirelens_demo_suggestion_applied';
+const BUILDER_STORAGE_KEY = 'hirelens_resume_builder_draft';
+
+const ORIGINAL_BULLET = 'Developed web applications using React and TypeScript.';
+const IMPROVED_BULLET = 'Built a responsive React application with reusable components, boosting customer engagement by 32%.';
+
+export const ImprovementSection: React.FC<ImprovementSectionProps> = ({ onNavigate }) => {
   const [activePill, setActivePill] = useState('Resume Builder');
   const [isApplied, setIsApplied] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [feedbackMessage, setFeedbackMessage] = useState<string | null>(null);
   const sectionRef = useRef<HTMLDivElement>(null);
+
+  // Load applied state from session on mount
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(DEMO_STORAGE_KEY);
+      if (saved === 'true') {
+        setIsApplied(true);
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -26,7 +53,7 @@ export const ImprovementSection: React.FC = () => {
           setIsVisible(true);
         }
       },
-      { threshold: 0.15 }
+      { threshold: 0.1 }
     );
 
     if (sectionRef.current) {
@@ -36,14 +63,163 @@ export const ImprovementSection: React.FC = () => {
     return () => observer.disconnect();
   }, []);
 
-  const navPills = [
-    'Resume Builder',
-    'Resume Tailor',
-    'Cover Letter',
-    'Job Tracker',
-    'Interview Prep',
-    'Job Matches',
+  const navPills: { 
+    name: string; 
+    tab: 'builder' | 'tailor' | 'cover-letter' | 'tracker' | 'interview-prep' | 'matcher';
+    actionLabel: string;
+    description: string;
+  }[] = [
+    { 
+      name: 'Resume Builder', 
+      tab: 'builder', 
+      actionLabel: 'Open Full Resume Builder & Document Studio →',
+      description: 'ATS document studio with customizable sections, live layout formatting, and export.'
+    },
+    { 
+      name: 'Resume Tailor', 
+      tab: 'tailor', 
+      actionLabel: 'Open Resume Tailor & Keyword Matcher →',
+      description: 'Adapt resume keywords and rewrite bullet points to align with job descriptions.'
+    },
+    { 
+      name: 'Cover Letter', 
+      tab: 'cover-letter', 
+      actionLabel: 'Launch Cover Letter Generator →',
+      description: 'Generate targeted application letters with customizable tone and achievements.'
+    },
+    { 
+      name: 'Job Tracker', 
+      tab: 'tracker', 
+      actionLabel: 'Open Job Application Tracker →',
+      description: 'Organize and manage your applications, interviews, deadlines, and follow-ups.'
+    },
+    { 
+      name: 'Interview Prep', 
+      tab: 'interview-prep', 
+      actionLabel: 'Start Interview Prep Coach →',
+      description: 'Practice role-specific STAR behavioral, situational, and technical questions.'
+    },
+    { 
+      name: 'Job Matches', 
+      tab: 'matcher', 
+      actionLabel: 'Launch Job Matcher & Skill Gap Analysis →',
+      description: 'Benchmark your resume against job requirements to reveal skill gaps.'
+    },
   ];
+
+  const handlePillClick = (item: typeof navPills[0], e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    setActivePill(item.name);
+    if (onNavigate) {
+      onNavigate(item.tab);
+    }
+  };
+
+  const updateBuilderSessionDraft = (applied: boolean) => {
+    try {
+      const saved = sessionStorage.getItem(BUILDER_STORAGE_KEY);
+      let draft = saved ? JSON.parse(saved) : null;
+      const targetBullet = applied ? IMPROVED_BULLET : ORIGINAL_BULLET;
+
+      if (!draft) {
+        // Initialize default draft if user has not visited builder yet
+        draft = {
+          fullName: 'Alex Morgan',
+          targetTitle: 'Senior Full Stack Engineer',
+          email: 'alex.morgan@email.com',
+          phone: '+1 (555) 234-5678',
+          location: 'San Francisco, CA',
+          linkedin: 'linkedin.com/in/alexmorgan-dev',
+          github: 'github.com/alexmorgan',
+          summary: 'Performance-driven Full Stack Engineer with 5+ years of experience architecting high-scale React, TypeScript, and Node.js applications. Proven record of reducing API latency by 35% and accelerating release velocity across cross-functional product squads.',
+          skills: 'React, TypeScript, Next.js, Node.js, Express, Python, PostgreSQL, Redis, Docker, AWS (S3/EC2), REST APIs, GraphQL, Tailwind CSS, Jest, CI/CD',
+          experience: [
+            {
+              id: 'exp-1',
+              role: 'Senior Software Engineer',
+              company: 'TechFlow Systems',
+              dates: '2022 – Present',
+              location: 'San Francisco, CA',
+              bullets: [
+                targetBullet,
+                'Architected high-throughput RESTful microservices in Node.js/TypeScript serving 45,000+ daily active users with 99.98% uptime.',
+                'Engineered Redis caching layer for heavy SQL query endpoints, cutting median response time from 320ms to 45ms.'
+              ]
+            },
+            {
+              id: 'exp-2',
+              role: 'Full Stack Engineer',
+              company: 'Nexus Digital',
+              dates: '2020 – 2022',
+              location: 'Austin, TX',
+              bullets: [
+                'Spearheaded frontend migration to Next.js and Tailwind CSS, increasing Lighthouse performance score from 68 to 96.',
+                'Integrated Stripe payment workflows and webhook reconciliation pipeline processing $1.2M in annual transactions.'
+              ]
+            }
+          ],
+          education: [
+            {
+              id: 'edu-1',
+              degree: 'B.S. in Computer Science',
+              institution: 'University of California, Berkeley',
+              year: '2016 – 2020',
+              location: 'Berkeley, CA'
+            }
+          ]
+        };
+      } else if (draft.experience && draft.experience.length > 0) {
+        if (!draft.experience[0].bullets) {
+          draft.experience[0].bullets = [];
+        }
+        draft.experience[0].bullets[0] = targetBullet;
+      }
+      sessionStorage.setItem(BUILDER_STORAGE_KEY, JSON.stringify(draft));
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleApplySuggestion = (e?: React.MouseEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+    const nextState = !isApplied;
+    setIsApplied(nextState);
+    try {
+      sessionStorage.setItem(DEMO_STORAGE_KEY, nextState ? 'true' : 'false');
+    } catch (e) {
+      // ignore
+    }
+    updateBuilderSessionDraft(nextState);
+
+    if (nextState) {
+      setFeedbackMessage('✓ Improved bullet point applied! Preserved in your active Resume Builder session.');
+    } else {
+      setFeedbackMessage('Reverted to original bullet point in session draft.');
+    }
+    setTimeout(() => setFeedbackMessage(null), 4000);
+  };
+
+  const handleUndo = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsApplied(false);
+    try {
+      sessionStorage.setItem(DEMO_STORAGE_KEY, 'false');
+    } catch (e) {
+      // ignore
+    }
+    updateBuilderSessionDraft(false);
+    setFeedbackMessage('Reverted to original draft bullet point.');
+    setTimeout(() => setFeedbackMessage(null), 4000);
+  };
+
+  const currentPillObj = navPills.find(p => p.name === activePill) || navPills[0];
 
   const features = [
     {
@@ -66,6 +242,7 @@ export const ImprovementSection: React.FC = () => {
   return (
     <section 
       ref={sectionRef}
+      id="sec-improvement"
       className="relative bg-[#071310] text-[#F5F8F6] py-[110px] lg:py-[130px] border-t border-[#142320] overflow-hidden min-h-[850px] lg:min-h-[940px] flex items-center"
     >
       
@@ -85,80 +262,60 @@ export const ImprovementSection: React.FC = () => {
         <div className="text-center max-w-[720px] mx-auto space-y-4">
           
           {/* Eyebrow */}
-          <div
-            style={{
-              transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-              opacity: isVisible ? 1 : 0,
-              transition: 'all 700ms cubic-bezier(0.16, 1, 0.3, 1) 100ms',
-            }}
-          >
-            <span className="text-[12.5px] font-bold uppercase tracking-[2px] text-[#5AD3AD] font-sans block">
+          <div>
+            <span className="text-[12.5px] font-bold uppercase tracking-[2px] text-[#5AD3AD] font-mono block">
               RESUME IMPROVEMENT
             </span>
           </div>
 
           {/* Main Heading */}
-          <div
-            style={{
-              transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-              opacity: isVisible ? 1 : 0,
-              transition: 'all 700ms cubic-bezier(0.16, 1, 0.3, 1) 220ms',
-            }}
-          >
+          <div>
             <h2 className="text-4xl sm:text-5xl lg:text-[52px] font-bold text-white tracking-[-1.8px] leading-[1.08]">
               Put your resume score to work
             </h2>
           </div>
 
           {/* Subheading */}
-          <div
-            style={{
-              transform: isVisible ? 'translateY(0)' : 'translateY(20px)',
-              opacity: isVisible ? 1 : 0,
-              transition: 'all 700ms cubic-bezier(0.16, 1, 0.3, 1) 340ms',
-            }}
-          >
+          <div>
             <p className="text-[18px] sm:text-[19px] text-[#AEBAB7] leading-[1.6] pt-1">
-              Turn feedback into a stronger application.
+              Turn feedback into a stronger application. Select a tool to launch its interactive workspace.
             </p>
           </div>
 
         </div>
 
-        {/* 3. REDESIGNED NAVIGATION PILLS */}
-        <div className="flex items-center justify-center gap-3 sm:gap-3.5 flex-wrap max-w-[940px] mx-auto">
-          {navPills.map((pill, idx) => {
-            const isActive = activePill === pill;
+        {/* 3. SIX FEATURE BUTTONS */}
+        <div className="relative z-20 flex items-center justify-center gap-3 sm:gap-3.5 flex-wrap max-w-[940px] mx-auto">
+          {navPills.map((item) => {
+            const isActive = activePill === item.name;
             return (
               <button
-                key={pill}
-                onClick={() => setActivePill(pill)}
-                style={{
-                  transform: isVisible ? 'translateY(0)' : 'translateY(15px)',
-                  opacity: isVisible ? 1 : 0,
-                  transition: `all 600ms cubic-bezier(0.16, 1, 0.3, 1) ${400 + idx * 70}ms`,
-                }}
-                className={`py-[13px] px-[22px] rounded-full text-[13.5px] font-bold transition-all duration-250 cursor-pointer flex items-center justify-center ${
+                key={item.name}
+                type="button"
+                onClick={(e) => handlePillClick(item, e)}
+                title={`Launch ${item.name}: ${item.description}`}
+                className={`py-[13px] px-[22px] rounded-full text-[13.5px] font-bold transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 select-none ${
                   isActive
-                    ? 'bg-[#16B889] text-white shadow-[0_6px_22px_rgba(22,184,137,0.38)] scale-[1.02]'
-                    : 'bg-white/[0.08] text-white/75 hover:text-white hover:bg-white/[0.14] hover:-translate-y-1 hover:shadow-[0_4px_16px_rgba(0,0,0,0.25)] border border-white/[0.08]'
+                    ? 'bg-[#16B889] text-white shadow-[0_6px_22px_rgba(22,184,137,0.38)] scale-[1.03] ring-2 ring-[#5AD3AD]/40'
+                    : 'bg-white/[0.08] text-white/80 hover:text-white hover:bg-white/[0.14] hover:-translate-y-0.5 hover:shadow-[0_4px_16px_rgba(0,0,0,0.25)] border border-white/[0.08]'
                 }`}
               >
-                {pill}
+                <span>{item.name}</span>
+                <ArrowRight className={`w-3.5 h-3.5 transition-transform ${isActive ? 'translate-x-0.5 opacity-100' : 'opacity-60'}`} />
               </button>
             );
           })}
         </div>
 
-        {/* 4. MAIN CONTENT AREA: 50/50 TWO-COLUMN COMPOSITION (max-width 1240px, gap 80–100px) */}
+        {/* 4. MAIN CONTENT AREA: 50/50 TWO-COLUMN COMPOSITION */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-[90px] items-center pt-2">
           
-          {/* LEFT COLUMN: EDITORIAL CONTENT (max-width 540px) */}
+          {/* LEFT COLUMN: EDITORIAL CONTENT */}
           <div className="lg:col-span-6 space-y-8 max-w-[540px]">
             
             <div className="space-y-3">
-              <span className="text-[12px] font-bold uppercase tracking-[2px] text-[#16B889] font-sans block">
-                RESUME FEEDBACK
+              <span className="text-[12px] font-bold uppercase tracking-[2px] text-[#16B889] font-mono block">
+                RESUME FEEDBACK & TOOLS
               </span>
 
               <h3 className="text-3xl sm:text-4xl lg:text-[36px] font-bold text-white tracking-[-1px] leading-[1.15]">
@@ -172,17 +329,12 @@ export const ImprovementSection: React.FC = () => {
 
             {/* 3 Clean Feature Rows */}
             <div className="space-y-6 pt-2">
-              {features.map((feat, index) => (
+              {features.map((feat) => (
                 <div 
                   key={feat.title}
-                  style={{
-                    transform: isVisible ? 'translateY(0)' : 'translateY(15px)',
-                    opacity: isVisible ? 1 : 0,
-                    transition: `all 700ms cubic-bezier(0.16, 1, 0.3, 1) ${600 + index * 120}ms`,
-                  }}
                   className="flex items-start gap-4 group"
                 >
-                  <div className="w-11 h-11 rounded-[12px] bg-[#12221E] border border-white/10 flex items-center justify-center shrink-0 group-hover:border-[#16B889]/50 group-hover:scale-105 transition-all duration-250 shadow-sm">
+                  <div className="w-11 h-11 rounded-[12px] bg-[#12221E] border border-white/10 flex items-center justify-center shrink-0 group-hover:border-[#16B889]/50 group-hover:scale-105 transition-all duration-200 shadow-sm">
                     {feat.icon}
                   </div>
                   <div className="space-y-1">
@@ -197,24 +349,29 @@ export const ImprovementSection: React.FC = () => {
               ))}
             </div>
 
+            {/* Direct Tool Launch Shortcut */}
+            {onNavigate && (
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => onNavigate(currentPillObj.tab)}
+                  className="inline-flex items-center gap-2 text-xs font-bold text-[#5AD3AD] hover:text-white bg-[#12221E] border border-[#16B889]/40 hover:border-[#16B889] px-4 py-2.5 rounded-xl transition-all cursor-pointer shadow-sm hover:shadow-md"
+                >
+                  <SlidersHorizontal className="w-4 h-4 text-[#16B889]" />
+                  <span>{currentPillObj.actionLabel}</span>
+                </button>
+              </div>
+            )}
+
           </div>
 
-          {/* RIGHT COLUMN: LARGE ANIMATED PRODUCT VISUAL HERO (540–600px wide × 440–500px tall) */}
+          {/* RIGHT COLUMN: LARGE ANIMATED PRODUCT VISUAL HERO */}
           <div className="lg:col-span-6 w-full flex items-center justify-center lg:justify-end">
             
             <div 
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              style={{
-                transform: isVisible
-                  ? isHovered 
-                    ? 'translateY(-6px) scale(1.01)' 
-                    : 'translateY(0px) scale(1)'
-                  : 'translateY(40px) scale(0.95)',
-                opacity: isVisible ? 1 : 0,
-                transition: 'all 900ms cubic-bezier(0.16, 1, 0.3, 1) 400ms',
-              }}
-              className="relative w-full max-w-[580px] min-h-[460px] lg:h-[500px] bg-[#0C1815] rounded-[26px] border border-white/[0.09] p-6 sm:p-7 shadow-[0_25px_65px_rgba(0,0,0,0.45)] flex flex-col justify-between overflow-hidden group cursor-default"
+              className="relative w-full max-w-[580px] min-h-[490px] bg-[#0C1815] rounded-[26px] border border-white/[0.09] p-6 sm:p-7 shadow-[0_25px_65px_rgba(0,0,0,0.45)] flex flex-col justify-between overflow-hidden group cursor-default"
             >
               
               {/* Subtle Internal Dotted Grid */}
@@ -224,36 +381,42 @@ export const ImprovementSection: React.FC = () => {
               <div className="relative z-10 flex items-center justify-between border-b border-white/[0.08] pb-3.5">
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-[#16B889] animate-pulse"></span>
-                  <span className="font-mono text-[12px] font-bold text-[#D7E2DE]">
-                    LIVE RESUME AUDIT
+                  <span className="font-mono text-[11.5px] font-bold text-[#D7E2DE]">
+                    INTERACTIVE RESUME DRAFT PREVIEW
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span 
-                    style={{
-                      transform: isVisible ? 'scale(1)' : 'scale(0.85)',
-                      opacity: isVisible ? 1 : 0,
-                      transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1) 650ms',
-                    }}
-                    className="bg-[#16B889]/20 border border-[#16B889]/40 text-[#5AD3AD] text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1"
-                  >
+                  <span className="bg-[#16B889]/20 border border-[#16B889]/40 text-[#5AD3AD] text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <Check className="w-3 h-3 text-[#16B889]" /> Strong match
                   </span>
-                  <span 
-                    style={{
-                      transform: isVisible ? 'scale(1)' : 'scale(0.85)',
-                      opacity: isVisible ? 1 : 0,
-                      transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1) 750ms',
-                    }}
-                    className="bg-[#D97736]/20 border border-[#D97736]/40 text-[#F5A773] text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1"
-                  >
+                  <span className="bg-[#D97736]/20 border border-[#D97736]/40 text-[#F5A773] text-[11px] font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
                     <AlertTriangle className="w-3 h-3 text-[#D97736]" /> Missing metric
                   </span>
                 </div>
               </div>
 
-              {/* RESUME PREVIEW SHEET WITH CONTINUOUS SUBTLE FLOAT (5–6s loop) */}
+              {/* Success / Feedback Toast Alert */}
+              {feedbackMessage && (
+                <div className="relative z-20 my-2 p-2.5 bg-[#122E26] border border-[#16B889]/60 rounded-xl text-white text-xs font-semibold flex items-center justify-between animate-fadeIn shadow-lg">
+                  <span className="flex items-center gap-1.5 text-[#5AD3AD]">
+                    <Check className="w-4 h-4 text-[#16B889] shrink-0" />
+                    {feedbackMessage}
+                  </span>
+                  {isApplied && (
+                    <button
+                      type="button"
+                      onClick={handleUndo}
+                      className="text-[11px] text-[#A8C7BD] hover:text-white underline cursor-pointer ml-2 shrink-0 flex items-center gap-1"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                      <span>Undo</span>
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* RESUME PREVIEW SHEET WITH CONTINUOUS SUBTLE FLOAT */}
               <div className="relative z-10 py-1">
                 
                 {/* Secondary Tilted Background Sheet Layer */}
@@ -274,19 +437,35 @@ export const ImprovementSection: React.FC = () => {
                   <div className="flex items-center justify-between border-b border-[#EAEFEA] pb-2">
                     <div>
                       <h4 className="font-extrabold text-[14px] text-[#273330] tracking-tight">ALEX MORGAN</h4>
-                      <p className="text-[10.5px] font-bold text-[#16B889] font-mono">SOFTWARE ENGINEER</p>
+                      <p className="text-[10.5px] font-bold text-[#16B889] font-mono">SENIOR FULL STACK ENGINEER</p>
                     </div>
-                    <span className="text-[9.5px] text-[#7A8A85] font-mono">Experience Section</span>
+                    <span className="text-[9.5px] text-[#7A8A85] font-mono">Experience Section (Active Draft)</span>
                   </div>
 
                   <div className="text-[12px] sm:text-[12.5px] text-[#44524E] leading-snug">
                     {isApplied ? (
-                      <p className="font-semibold text-[#16B889] bg-[#EAF8F3] p-2 rounded-[8px] border border-[#BDEBDC] transition-all duration-300">
-                        • Built a responsive React application with reusable components, boosting customer engagement by 32%.
-                      </p>
+                      <div className="space-y-1.5">
+                        <p className="font-semibold text-[#16B889] bg-[#EAF8F3] p-2.5 rounded-[8px] border border-[#BDEBDC] transition-all duration-300">
+                          • {IMPROVED_BULLET}
+                        </p>
+                        <div className="flex items-center justify-between text-[10.5px] text-[#129A72] px-1">
+                          <span className="flex items-center gap-1 font-medium">
+                            <Check className="w-3 h-3 text-[#16B889]" />
+                            Applied to active draft session
+                          </span>
+                          <button
+                            type="button"
+                            onClick={handleUndo}
+                            className="text-[#68827A] hover:text-[#129A72] underline cursor-pointer flex items-center gap-1 font-semibold"
+                          >
+                            <RotateCcw className="w-3 h-3" />
+                            Revert change
+                          </button>
+                        </div>
+                      </div>
                     ) : (
-                      <p className="p-2 bg-[#F8FAF9] rounded-[8px] border border-[#EAEFEA] text-[#55625F]">
-                        • Developed web applications using React and TypeScript.
+                      <p className="p-2.5 bg-[#F8FAF9] rounded-[8px] border border-[#EAEFEA] text-[#55625F] transition-all duration-300">
+                        • {ORIGINAL_BULLET}
                       </p>
                     )}
                   </div>
@@ -298,61 +477,76 @@ export const ImprovementSection: React.FC = () => {
               <div className="relative z-10 bg-[#12221E] rounded-[18px] border border-white/[0.1] p-4 space-y-3 shadow-lg">
                 
                 {/* Before Statement */}
-                <div 
-                  style={{
-                    transform: isVisible ? 'translateY(0)' : 'translateY(15px)',
-                    opacity: isVisible ? 1 : 0,
-                    transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1) 850ms',
-                  }}
-                  className="space-y-1"
-                >
+                <div className="space-y-1">
                   <span className="text-[9.5px] font-mono font-bold text-[#D97736] uppercase tracking-wider block">
-                    BEFORE
+                    BEFORE — WEAK ACTION & NO METRICS
                   </span>
                   <p className="text-[11.5px] font-mono text-[#A1B2AD] line-through bg-black/40 p-2 rounded-[6px] border border-white/5">
-                    "We worked on a website using React."
+                    "{ORIGINAL_BULLET}"
                   </p>
                 </div>
 
                 {/* After Statement */}
-                <div 
-                  style={{
-                    transform: isVisible ? 'translateY(0)' : 'translateY(15px)',
-                    opacity: isVisible ? 1 : 0,
-                    transition: 'all 600ms cubic-bezier(0.16, 1, 0.3, 1) 950ms',
-                  }}
-                  className="space-y-1"
-                >
+                <div className="space-y-1">
                   <div className="flex items-center justify-between text-[9.5px] font-mono font-bold text-[#5AD3AD] uppercase tracking-wider">
-                    <span>AFTER — IMPROVED</span>
+                    <span>AFTER — QUANTIFIED IMPACT & SCALE</span>
                     <ArrowDown className="w-3 h-3 text-[#16B889]" />
                   </div>
                   <p className="text-[12px] font-mono text-white bg-[#16B889]/15 border border-[#16B889]/40 p-2.5 rounded-[6px] leading-relaxed">
-                    "Built a responsive React application with reusable components."
+                    "{IMPROVED_BULLET}"
                   </p>
                 </div>
 
-                {/* Interactive Action Button */}
-                <button
-                  onClick={() => setIsApplied(!isApplied)}
-                  className={`w-full h-[42px] rounded-[10px] text-[12.5px] font-bold transition-all duration-250 flex items-center justify-center gap-2 cursor-pointer shadow-md ${
-                    isApplied
-                      ? 'bg-[#129A72] text-white border border-[#5AD3AD]/40'
-                      : 'bg-[#16B889] hover:bg-[#139E75] text-white hover:shadow-[0_6px_20px_rgba(22,184,137,0.35)]'
-                  }`}
-                >
-                  {isApplied ? (
-                    <>
-                      <Check className="w-4 h-4 text-white" />
-                      <span>Applied to Resume ✓ (Click to reset)</span>
-                    </>
-                  ) : (
-                    <>
-                      <Sparkles className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
-                      <span>✦ Apply suggestion</span>
-                    </>
+                {/* Interactive Action Buttons */}
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleApplySuggestion}
+                    className={`flex-1 h-[42px] rounded-[10px] text-[12.5px] font-bold transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-md select-none ${
+                      isApplied
+                        ? 'bg-[#129A72] hover:bg-[#0E8561] text-white border border-[#5AD3AD]/40 ring-2 ring-[#5AD3AD]/25'
+                        : 'bg-[#16B889] hover:bg-[#139E75] text-white hover:shadow-[0_6px_20px_rgba(22,184,137,0.35)]'
+                    }`}
+                  >
+                    {isApplied ? (
+                      <>
+                        <Check className="w-4 h-4 text-white" />
+                        <span>✓ Suggestion Applied (Click to Toggle)</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-white group-hover:scale-110 transition-transform" />
+                        <span>✦ Apply suggestion</span>
+                      </>
+                    )}
+                  </button>
+
+                  {isApplied && (
+                    <button
+                      type="button"
+                      onClick={handleUndo}
+                      className="h-[42px] px-3 bg-[#1B362F] hover:bg-[#23453C] text-[#A8C7BD] hover:text-white rounded-[10px] text-xs font-bold transition-all flex items-center gap-1 cursor-pointer select-none"
+                      title="Undo change"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Undo</span>
+                    </button>
                   )}
-                </button>
+                </div>
+
+                <div className="flex items-center justify-between text-[10.5px] text-[#788E87] pt-0.5">
+                  <span>Draft session active. Changes reflect across workspace tools.</span>
+                  {onNavigate && (
+                    <button
+                      type="button"
+                      onClick={() => onNavigate('builder')}
+                      className="text-[#5AD3AD] hover:underline cursor-pointer flex items-center gap-1 font-semibold"
+                    >
+                      <span>Open in Builder</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
 
               </div>
 

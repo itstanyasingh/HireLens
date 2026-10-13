@@ -1,7 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Sparkles, Check, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Check, CheckCircle2, Target } from 'lucide-react';
 
-export const TailoringSection: React.FC = () => {
+interface TailoringSectionProps {
+  onOpenTailor?: () => void;
+}
+
+export const TailoringSection: React.FC<TailoringSectionProps> = ({ onOpenTailor }) => {
   const [isVisible, setIsVisible] = useState(false);
   const [parallaxY, setParallaxY] = useState(0);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -124,6 +128,19 @@ export const TailoringSection: React.FC = () => {
               </div>
               <span>Only recommend skills that genuinely match the candidate's experience.</span>
             </div>
+
+            {/* 6. Action Button */}
+            {onOpenTailor && (
+              <div className="pt-2">
+                <button
+                  onClick={onOpenTailor}
+                  className="inline-flex items-center gap-2.5 px-6 py-3.5 rounded-xl text-xs font-bold bg-[#16B889] hover:bg-[#139E75] text-white shadow-md hover:shadow-lg transition-all cursor-pointer"
+                >
+                  <Target className="w-4 h-4" />
+                  <span>Launch Resume Tailor Tool →</span>
+                </button>
+              </div>
+            )}
 
           </div>
 

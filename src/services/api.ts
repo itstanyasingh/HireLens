@@ -154,6 +154,95 @@ export async function fixBulletPoint(originalBullet: string, targetRole: string 
   };
 }
 
+export interface CoverLetterResponse {
+  subject: string;
+  content: string;
+  highlights: string[];
+}
+
+export async function generateCoverLetter(params: {
+  candidateName: string;
+  jobTitle: string;
+  companyName: string;
+  experienceSnippet?: string;
+  tone?: string;
+}): Promise<CoverLetterResponse> {
+  const res = await fetch('/api/generate-cover-letter', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to generate cover letter');
+  }
+  return res.json();
+}
+
+export interface InterviewQuestionItem {
+  question: string;
+  evaluates: string;
+  starStrategy: string;
+  suggestedKeywords: string[];
+}
+
+export interface InterviewPrepResponse {
+  roleOverview: string;
+  behavioral: InterviewQuestionItem[];
+  technical: InterviewQuestionItem[];
+  situational: InterviewQuestionItem[];
+}
+
+export async function generateInterviewPrep(params: {
+  jobTitle: string;
+  companyName?: string;
+  jobDescription?: string;
+  experienceLevel?: string;
+}): Promise<InterviewPrepResponse> {
+  const res = await fetch('/api/generate-interview-prep', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to generate interview prep guide');
+  }
+  return res.json();
+}
+
+export interface TailorResumeResponse {
+  tailorScore: number;
+  matchedKeywords: string[];
+  missingKeywords: string[];
+  bulletRewrites: {
+    original: string;
+    tailored: string;
+    alignmentReason: string;
+  }[];
+  sectionAdvice: {
+    section: string;
+    advice: string;
+  }[];
+}
+
+export async function tailorResume(params: {
+  resumeText: string;
+  jobDescription: string;
+  targetRole?: string;
+}): Promise<TailorResumeResponse> {
+  const res = await fetch('/api/tailor-resume', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(params)
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || 'Failed to tailor resume');
+  }
+  return res.json();
+}
+
 // LocalStorage History Helpers
 export function getHistory(): AnalysisReport[] {
   try {
