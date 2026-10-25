@@ -16,6 +16,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
   const [isExtracting, setIsExtracting] = useState(false);
   const [activeTab, setActiveTab] = useState<'upload' | 'paste'>('upload');
   const [pastedText, setPastedText] = useState('');
+  const [showTextReview, setShowTextReview] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFile = async (file: File) => {
@@ -74,6 +75,7 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
   };
 
   const handleConfirmFile = () => {
+    if (isLoading) return;
     if (activeTab === 'paste') {
       if (pastedText.trim().length < 30) {
         setError('Please paste a complete resume text (at least 30 characters).');
@@ -179,35 +181,71 @@ export const UploadZone: React.FC<UploadZoneProps> = ({ onFileSelect, isLoading 
               </div>
             ) : (
               /* Selected File Card */
-              <div className="border border-slate-200 bg-slate-50/70 rounded-xl p-5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
-                    <FileCode className="w-6 h-6" />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-sm text-slate-900 truncate">
-                        {selectedFile.name}
-                      </span>
-                      <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
-                        Ready
+              <div className="space-y-3">
+                <div className="border border-slate-200 bg-slate-50/70 rounded-xl p-5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-12 h-12 bg-white border border-slate-200 rounded-xl flex items-center justify-center text-indigo-600 shadow-sm shrink-0">
+                      <FileCode className="w-6 h-6" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm text-slate-900 truncate">
+                          {selectedFile.name}
+                        </span>
+                        <span className="text-[10px] uppercase font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">
+                          Extracted & Ready
+                        </span>
+                      </div>
+                      <span className="text-xs text-slate-500">
+                        {(selectedFile.size / 1024).toFixed(1)} KB • {selectedFile.text.split(/\s+/).filter(Boolean).length} words parsed
                       </span>
                     </div>
-                    <span className="text-xs text-slate-500">
-                      {(selectedFile.size / 1024).toFixed(1)} KB • Text content extracted
-                    </span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowTextReview(!showTextReview)}
+                      className="px-3 py-1.5 text-xs font-semibold text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50 border border-indigo-200 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>{showTextReview ? 'Hide Extracted Text' : 'Review Extracted Text'}</span>
+                    </button>
+                    <button
+                      onClick={() => setSelectedFile(null)}
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                      title="Remove file"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => setSelectedFile(null)}
-                    className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                    title="Remove file"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
-                </div>
+                {/* Review & Edit Extracted Text Drawer */}
+                {showTextReview && (
+                  <div className="bg-[#FAFBFB] p-4 rounded-xl border border-slate-200 space-y-2 animate-fadeIn">
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="font-bold text-slate-700 flex items-center gap-1.5">
+                        <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                        <span>Extracted Document Text (Editable)</span>
+                      </span>
+                      <span className="text-slate-400 text-[11px]">
+                        Review or correct any misread formatting before analysis
+                      </span>
+                    </div>
+                    <textarea
+                      rows={8}
+                      value={selectedFile.text}
+                      onChange={(e) => {
+                        setSelectedFile({
+                          ...selectedFile,
+                          text: e.target.value
+                        });
+                      }}
+                      className="w-full text-xs font-mono p-3 bg-white rounded-lg border border-slate-300 focus:border-indigo-500 outline-none leading-relaxed text-slate-800"
+                    />
+                  </div>
+                )}
               </div>
             )}
 

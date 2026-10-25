@@ -14,7 +14,7 @@ import { FinalCTA } from '../components/FinalCTA';
 interface LandingPageProps {
   onStartAnalysis: (resumeText: string, fileName: string, jobDescription?: string) => void;
   isLoading: boolean;
-  onNavigate?: (tab: 'landing' | 'report' | 'matcher' | 'history' | 'builder' | 'tailor' | 'cover-letter' | 'tracker' | 'interview-prep') => void;
+  onNavigate?: (tab: 'landing' | 'report' | 'matcher' | 'history' | 'builder' | 'tailor' | 'cover-letter' | 'tracker' | 'interview-prep' | 'studio' | 'match-lab' | 'methodology') => void;
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ onStartAnalysis, isLoading, onNavigate }) => {

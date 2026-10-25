@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   ArrowLeft, 
   Target, 
@@ -10,28 +10,114 @@ import {
   FileText, 
   Briefcase, 
   SlidersHorizontal,
-  ArrowRight
+  Upload,
+  RefreshCw,
+  Layers
 } from 'lucide-react';
 import { SAMPLE_RESUMES } from '../data/mockResumes';
 import { MOCK_JOBS } from '../data/mockJobs';
 import { tailorResume, TailorResumeResponse } from '../services/api';
+import { extractTextFromFile } from '../services/pdfExtractor';
+import { ResumeData } from '../types/resumeBuilder';
 
 interface ResumeTailorPageProps {
   onBackToHome: () => void;
   onOpenBuilder?: () => void;
 }
 
+const STORAGE_KEY = 'hirelens_resume_builder_full_draft';
+
 export const ResumeTailorPage: React.FC<ResumeTailorPageProps> = ({
   onBackToHome,
   onOpenBuilder
 }) => {
-  const [targetRole, setTargetRole] = useState('Senior Full Stack Engineer');
-  const [jobDescription, setJobDescription] = useState(MOCK_JOBS[0].description);
-  const [resumeText, setResumeText] = useState(SAMPLE_RESUMES[0].resumeText);
+  const [targetRole, setTargetRole] = useState('');
+  const [jobDescription, setJobDescription] = useState('');
+  const [resumeText, setResumeText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [results, setResults] = useState<TailorResumeResponse | null>(null);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [fileLoading, setFileLoading] = useState(false);
+
+  // Accept/Reject state for bullet rewrites
+  const [acceptedBullets, setAcceptedBullets] = useState<Record<number, boolean>>({});
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Import from Resume Studio draft
+  const handleImportFromStudio = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        setError('No saved resume found in Resume Studio. Please build or import a resume in Resume Studio first.');
+        return;
+      }
+      const data: ResumeData = JSON.parse(raw);
+      let text = '';
+      if (data.personal) {
+        text += `${data.personal.fullName || ''}\n${data.personal.targetTitle || ''}\n${data.personal.email || ''} | ${data.personal.phone || ''} | ${data.personal.location || ''}\n\n`;
+        if (data.personal.targetTitle && !targetRole) {
+          setTargetRole(data.personal.targetTitle);
+        }
+      }
+      if (data.summary) {
+        text += `SUMMARY\n${data.summary}\n\n`;
+      }
+      if (data.experience && data.experience.length > 0) {
+        text += `EXPERIENCE\n`;
+        data.experience.forEach(exp => {
+          text += `${exp.role} at ${exp.company} (${exp.dates || ''})\n`;
+          exp.bullets?.forEach((h: string) => {
+            text += `• ${h}\n`;
+          });
+          text += '\n';
+        });
+      }
+      if (data.skills && data.skills.length > 0) {
+        text += `SKILLS\n${data.skills.join(', ')}\n\n`;
+      }
+      if (data.education && data.education.length > 0) {
+        text += `EDUCATION\n`;
+        data.education.forEach(edu => {
+          text += `${edu.degree} - ${edu.institution} (${edu.year})\n`;
+        });
+      }
+      setResumeText(text.trim());
+      setError(null);
+    } catch (e: any) {
+      setError('Failed to import resume from Resume Studio.');
+    }
+  };
+
+  // File Upload handler
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+      setError('File size exceeds 10MB limit. Please upload a smaller document.');
+      return;
+    }
+
+    setFileLoading(true);
+    setError(null);
+
+    try {
+      const extractedText = await extractTextFromFile(file);
+      if (!extractedText || extractedText.trim().length < 20) {
+        throw new Error('Could not extract readable text from this document. Please upload a text-based PDF, DOCX, or TXT file.');
+      }
+      setResumeText(extractedText);
+    } catch (err: any) {
+      setError(err?.message || 'Failed to extract text from file.');
+    } finally {
+      setFileLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
 
   const handleTailor = async () => {
     setError(null);
@@ -40,7 +126,7 @@ export const ResumeTailorPage: React.FC<ResumeTailorPageProps> = ({
       return;
     }
     if (!resumeText || resumeText.trim().length < 20) {
-      setError('Please provide your resume content (at least 20 characters).');
+      setError('Please provide your resume content (at least 20 characters) via upload, pasting, or importing from Resume Studio.');
       return;
     }
 
@@ -52,6 +138,7 @@ export const ResumeTailorPage: React.FC<ResumeTailorPageProps> = ({
         targetRole
       });
       setResults(data);
+      setAcceptedBullets({});
     } catch (err: any) {
       setError(err?.message || 'Failed to tailor resume. Please check your connection and try again.');
     } finally {
@@ -63,6 +150,41 @@ export const ResumeTailorPage: React.FC<ResumeTailorPageProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedIndex(idx);
     setTimeout(() => setCopiedIndex(null), 2000);
+  };
+
+  const toggleAcceptBullet = (idx: number) => {
+    setAcceptedBullets(prev => ({
+      ...prev,
+      [idx]: !prev[idx]
+    }));
+  };
+
+  const handleApplyToResumeStudio = () => {
+    if (!results) return;
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data: ResumeData = JSON.parse(raw);
+        // Apply accepted bullet changes to summary or experience if possible
+        if (data.experience && data.experience.length > 0) {
+          results.bulletRewrites.forEach((bw, idx) => {
+            if (acceptedBullets[idx]) {
+              if (data.experience[0].bullets) {
+                data.experience[0].bullets.push(bw.tailored);
+              } else {
+                data.experience[0].bullets = [bw.tailored];
+              }
+            }
+          });
+        }
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      }
+      if (onOpenBuilder) {
+        onOpenBuilder();
+      }
+    } catch (e: any) {
+      setError('Failed to apply tailored changes to Resume Studio.');
+    }
   };
 
   return (
@@ -180,26 +302,53 @@ export const ResumeTailorPage: React.FC<ResumeTailorPageProps> = ({
                 <FileText className="w-4 h-4 text-[#16B889]" />
                 <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#273330]">2. Your Current Resume</h3>
               </div>
-              <div className="flex gap-1.5">
-                {SAMPLE_RESUMES.map(s => (
-                  <button
-                    key={s.id}
-                    onClick={() => setResumeText(s.resumeText)}
-                    className="text-[10px] text-[#55625F] bg-[#F0F5F2] hover:bg-[#E4ECE8] px-2 py-0.5 rounded cursor-pointer font-bold"
-                  >
-                    {s.title.split(' ')[0]}
-                  </button>
-                ))}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleImportFromStudio}
+                  className="flex items-center gap-1 text-[10px] text-[#129A72] bg-[#EAF8F3] hover:bg-[#D5F2E7] px-2 py-1 rounded-md cursor-pointer font-bold border border-[#BDEBDC]"
+                  title="Load resume data from Resume Studio"
+                >
+                  <Layers className="w-3 h-3" />
+                  <span>Import Studio Draft</span>
+                </button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".pdf,.docx,.txt"
+                  className="hidden"
+                />
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={fileLoading}
+                  className="flex items-center gap-1 text-[10px] text-[#55625F] bg-[#F0F5F2] hover:bg-[#E4ECE8] px-2 py-1 rounded-md cursor-pointer font-bold"
+                >
+                  <Upload className="w-3 h-3" />
+                  <span>{fileLoading ? 'Extracting...' : 'Upload File'}</span>
+                </button>
               </div>
             </div>
 
-            <div className="space-y-1.5 pt-8">
-              <label className="text-[11px] font-bold text-[#55625F] block">Resume Experience & Skills Text:</label>
+            <div className="space-y-1.5 pt-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-[#55625F] block">Resume Experience & Skills Text:</label>
+                <div className="flex gap-1.5">
+                  {SAMPLE_RESUMES.map(s => (
+                    <button
+                      key={s.id}
+                      onClick={() => setResumeText(s.resumeText)}
+                      className="text-[10px] text-[#55625F] bg-[#F0F5F2] hover:bg-[#E4ECE8] px-2 py-0.5 rounded cursor-pointer font-bold"
+                    >
+                      {s.title.split(' ')[0]}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <textarea
-                rows={12}
+                rows={10}
                 value={resumeText}
                 onChange={e => setResumeText(e.target.value)}
-                placeholder="Paste your current resume content here..."
+                placeholder="Paste your current resume content here, upload a PDF/DOCX, or import from Resume Studio..."
                 className="w-full text-xs font-mono bg-[#F9FBFA] border border-[#D9E3DF] rounded-xl p-3 text-[#273330] focus:bg-white focus:border-[#16B889] outline-none resize-y"
               />
             </div>
@@ -316,53 +465,66 @@ export const ResumeTailorPage: React.FC<ResumeTailorPageProps> = ({
 
             </div>
 
-            {/* Bullet Point Rewrites */}
+            {/* Bullet Point Rewrites (Side-by-Side & Accept/Reject) */}
             <div className="space-y-4">
-              <h4 className="text-sm font-extrabold text-[#192622] flex items-center gap-2">
-                <Sparkles className="w-4 h-4 text-[#16B889]" />
-                <span>Tailored Achievement Bullet Rewrites</span>
-              </h4>
+              <div className="flex items-center justify-between">
+                <h4 className="text-sm font-extrabold text-[#192622] flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#16B889]" />
+                  <span>Tailored Achievement Bullet Rewrites & Side-by-Side Comparison</span>
+                </h4>
+                {onOpenBuilder && (
+                  <button
+                    onClick={handleApplyToResumeStudio}
+                    className="px-3 py-1.5 bg-[#16B889] hover:bg-[#139E75] text-white text-xs font-bold rounded-lg cursor-pointer transition-all"
+                  >
+                    Apply Accepted to Resume Studio
+                  </button>
+                )}
+              </div>
 
               <div className="space-y-4">
-                {results.bulletRewrites.map((item, idx) => (
-                  <div key={idx} className="p-4 bg-[#F9FBFA] rounded-2xl border border-[#E0EAE5] space-y-3">
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-mono font-bold text-[#8A9A95] uppercase">Original Statement:</span>
-                      <p className="text-xs text-[#55625F] bg-white p-2.5 rounded-lg border border-[#E7ECE9]">
-                        {item.original}
-                      </p>
-                    </div>
+                {results.bulletRewrites.map((item, idx) => {
+                  const isAccepted = acceptedBullets[idx];
+                  return (
+                    <div key={idx} className={`p-4 rounded-2xl border transition-all space-y-3 ${isAccepted ? 'bg-[#F2FBF7] border-[#16B889]' : 'bg-[#F9FBFA] border-[#E0EAE5]'}`}>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-mono font-bold text-[#8A9A95] uppercase">Original Statement:</span>
+                          <p className="text-xs text-[#55625F] bg-white p-3 rounded-xl border border-[#E7ECE9] min-h-[50px] flex items-center">
+                            {item.original}
+                          </p>
+                        </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[10px] font-mono font-bold text-[#16B889] uppercase">Tailored & Keyword-Aligned:</span>
-                        <button
-                          onClick={() => handleCopyBullet(item.tailored, idx)}
-                          className="flex items-center gap-1 text-[11px] font-bold text-[#16B889] hover:text-[#129A72] cursor-pointer"
-                        >
-                          {copiedIndex === idx ? (
-                            <>
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Copied!</span>
-                            </>
-                          ) : (
-                            <>
-                              <Copy className="w-3.5 h-3.5" />
-                              <span>Copy Bullet</span>
-                            </>
-                          )}
-                        </button>
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-mono font-bold text-[#16B889] uppercase">Proposed Tailored Version:</span>
+                            <div className="flex items-center gap-2">
+                              <button
+                                onClick={() => toggleAcceptBullet(idx)}
+                                className={`px-2.5 py-0.5 rounded text-[10px] font-bold cursor-pointer transition-all ${isAccepted ? 'bg-[#16B889] text-white' : 'bg-[#EAF8F3] text-[#129A72] border border-[#BDEBDC]'}`}
+                              >
+                                {isAccepted ? '✓ Accepted' : 'Accept Change'}
+                              </button>
+                              <button
+                                onClick={() => handleCopyBullet(item.tailored, idx)}
+                                className="flex items-center gap-1 text-[11px] font-bold text-[#16B889] hover:text-[#129A72] cursor-pointer"
+                              >
+                                {copiedIndex === idx ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                              </button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-[#162320] font-semibold bg-white p-3 rounded-xl border border-[#BDEBDC] leading-relaxed min-h-[50px] flex items-center">
+                            • {item.tailored}
+                          </p>
+                        </div>
                       </div>
-                      <p className="text-xs text-[#162320] font-semibold bg-[#EBF8F3] p-3 rounded-lg border border-[#BDEBDC] leading-relaxed">
-                        • {item.tailored}
+
+                      <p className="text-[11px] text-[#697A75] italic pt-1">
+                        💡 {item.alignmentReason}
                       </p>
                     </div>
-
-                    <p className="text-[11px] text-[#697A75] italic">
-                      💡 {item.alignmentReason}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 

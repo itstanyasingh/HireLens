@@ -10,6 +10,11 @@ import { ResumeTailorPage } from './pages/ResumeTailorPage';
 import { CoverLetterPage } from './pages/CoverLetterPage';
 import { JobTrackerPage } from './pages/JobTrackerPage';
 import { InterviewPrepPage } from './pages/InterviewPrepPage';
+import { MatchLabPage } from './pages/MatchLabPage';
+import { MatchIntegrityLabPage } from './pages/MatchIntegrityLabPage';
+import { MethodologyPage } from './pages/MethodologyPage';
+import { ResumeStudioPage } from './pages/ResumeStudioPage';
+import { ResumeTemplatesPage } from './pages/ResumeTemplatesPage';
 import { AnalysisProgress } from './components/AnalysisProgress';
 import { analyzeResume, AnalysisReport, getHistory } from './services/api';
 
@@ -46,13 +51,18 @@ export default function App() {
       const validTabs: AppTab[] = [
         'landing',
         'report',
+        'match-lab',
+        'integrity-lab',
         'matcher',
         'history',
         'builder',
         'tailor',
         'cover-letter',
         'tracker',
-        'interview-prep'
+        'interview-prep',
+        'methodology',
+        'studio',
+        'templates'
       ];
       if (rawHash && validTabs.includes(rawHash as AppTab)) {
         setActiveTab(rawHash as AppTab);
@@ -80,8 +90,11 @@ export default function App() {
     }
   }, []);
 
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
+
   const handleStartAnalysis = async (resumeText: string, fileName: string, jobDescription?: string) => {
     setActiveReport(null);
+    setAnalysisError(null);
     setLoadingFileName(fileName);
     setIsSubmitting(true);
     setActiveTab('loading');
@@ -91,9 +104,7 @@ export default function App() {
       setActiveReport(report);
     } catch (err: any) {
       console.error('Analysis error:', err);
-      // Soft feedback instead of blocking alert
-      console.warn(err?.message || "Unable to read resume");
-      navigateTo('landing');
+      setAnalysisError(err?.message || "Unable to read or parse this resume correctly. Please upload a text-based PDF or DOCX file.");
     } finally {
       setIsSubmitting(false);
     }
@@ -102,8 +113,6 @@ export default function App() {
   const handleLoadingFinished = () => {
     if (activeReport) {
       navigateTo('report');
-    } else {
-      navigateTo('landing');
     }
   };
 
@@ -132,7 +141,10 @@ export default function App() {
         {activeTab === 'loading' && (
           <AnalysisProgress
             fileName={loadingFileName}
+            isReady={!!activeReport}
+            error={analysisError}
             onComplete={handleLoadingFinished}
+            onBackToHome={() => navigateTo('landing')}
           />
         )}
 
@@ -144,13 +156,33 @@ export default function App() {
           />
         )}
 
-        {activeTab === 'report' && activeReport && (
-          <ReportPage
-            report={activeReport}
-            onAnalyzeAnother={() => {
-              navigateTo('landing');
-              setTimeout(() => handleScrollToSection('sec-upload'), 100);
-            }}
+        {activeTab === 'report' && (
+          (() => {
+            const reportToRender = activeReport || (getHistory().length > 0 ? getHistory()[0] : null);
+            if (reportToRender) {
+              return (
+                <ReportPage
+                  report={reportToRender}
+                  onAnalyzeAnother={() => {
+                    navigateTo('landing');
+                    setTimeout(() => handleScrollToSection('sec-upload'), 100);
+                  }}
+                />
+              );
+            }
+            return (
+              <LandingPage
+                onStartAnalysis={handleStartAnalysis}
+                isLoading={isSubmitting}
+                onNavigate={(tab) => navigateTo(tab)}
+              />
+            );
+          })()
+        )}
+
+        {activeTab === 'match-lab' && (
+          <MatchLabPage
+            onBackToHome={() => navigateTo('landing')}
           />
         )}
 
@@ -171,6 +203,27 @@ export default function App() {
               navigateTo('report');
             }}
             onNavigateLanding={() => navigateTo('landing')}
+          />
+        )}
+
+        {activeTab === 'templates' && (
+          <ResumeTemplatesPage
+            onBackToHome={() => navigateTo('landing')}
+            onOpenBuilderWithTemplate={(templateId, design) => {
+              try {
+                if (design) {
+                  localStorage.setItem('hirelens_resume_builder_design', JSON.stringify(design));
+                } else {
+                  localStorage.setItem('hirelens_resume_builder_design', JSON.stringify({
+                    templateId,
+                    accentColor: '#16B889',
+                    fontFamily: 'sans',
+                    spacing: 'comfortable'
+                  }));
+                }
+              } catch (e) {}
+              navigateTo('builder');
+            }}
           />
         )}
 
@@ -203,6 +256,26 @@ export default function App() {
         {activeTab === 'interview-prep' && (
           <InterviewPrepPage
             onBackToHome={() => navigateTo('landing')}
+          />
+        )}
+
+        {activeTab === 'methodology' && (
+          <MethodologyPage
+            onBackToHome={() => navigateTo('landing')}
+            onOpenMatchLab={() => navigateTo('match-lab')}
+          />
+        )}
+
+        {activeTab === 'integrity-lab' && (
+          <MatchIntegrityLabPage
+            onBackToHome={() => navigateTo('landing')}
+            onOpenMatchLab={() => navigateTo('match-lab')}
+          />
+        )}
+        {activeTab === 'studio' && (
+          <ResumeStudioPage
+            onBackToHome={() => navigateTo('landing')}
+            onOpenBuilder={() => navigateTo('builder')}
           />
         )}
       </main>

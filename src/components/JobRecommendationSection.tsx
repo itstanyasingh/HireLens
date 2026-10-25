@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, Target, Info } from 'lucide-react';
 import { MOCK_JOBS } from '../data/mockJobs';
 
 export const JobRecommendationSection: React.FC = () => {
@@ -10,16 +10,21 @@ export const JobRecommendationSection: React.FC = () => {
         {/* Section Header */}
         <div className="text-center max-w-3xl mx-auto space-y-3">
           <span className="inline-block text-xs font-bold uppercase tracking-widest text-[#168F70] bg-[#DDF6EC] px-3 py-1 rounded-md border border-[#35C99A]/30 font-mono">
-            HIRELENS OPPORTUNITIES
+            JOB MATCHING SIMULATOR PREVIEW
           </span>
 
           <h2 className="text-3xl sm:text-4xl font-extrabold text-[#293133] tracking-tight">
-            Your resume shouldn't stop at a score.
+            How HireLens audits alignment with job requirements
           </h2>
 
           <p className="text-sm text-[#5F6868] leading-relaxed">
-            Discover roles where your verified skills and qualifications hold high interview callback probability.
+            Instead of giving arbitrary scores, HireLens extracts requirements from actual job descriptions and maps them directly against verified textual evidence in your resume.
           </p>
+
+          <div className="inline-flex items-center gap-1.5 text-xs text-[#5F6868] bg-[#F7F9F8] border border-[#E2E8E5] px-3 py-1.5 rounded-lg mt-2">
+            <Info className="w-3.5 h-3.5 text-[#168F70]" />
+            <span>Below are sample specifications used for testing and demonstration purposes.</span>
+          </div>
         </div>
 
         {/* 3 Opportunity Cards */}
@@ -33,27 +38,27 @@ export const JobRecommendationSection: React.FC = () => {
                 <div className="flex items-start justify-between gap-3 mb-3">
                   <div>
                     <span className="text-[11px] font-bold text-[#5F6868] uppercase font-mono block">
-                      {job.company}
+                      Sample Benchmark · {job.company}
                     </span>
                     <h3 className="font-bold text-base text-[#293133] mt-0.5">
                       {job.title}
                     </h3>
                   </div>
 
-                  <span className="text-xs font-mono font-extrabold bg-[#DDF6EC] text-[#168F70] border border-[#35C99A]/40 px-2.5 py-1 rounded-lg shrink-0">
-                    92% Match
+                  <span className="text-xs font-mono font-bold bg-[#EAF8F3] text-[#168F70] border border-[#BDEBDC] px-2.5 py-1 rounded-lg shrink-0">
+                    Sample Spec
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2 text-xs text-[#5F6868] mb-4 font-mono">
                   <span>{job.location}</span>
                   <span>•</span>
-                  <span className="font-bold text-[#293133]">{job.salary}</span>
+                  <span className="font-medium text-[#293133]">Industry Benchmark</span>
                 </div>
 
                 {/* Matched Skills */}
                 <div className="space-y-1.5 mb-3">
-                  <span className="text-[10px] font-bold text-[#5F6868] uppercase block font-mono">Matched Skills</span>
+                  <span className="text-[10px] font-bold text-[#5F6868] uppercase block font-mono">Core Requirements</span>
                   <div className="flex flex-wrap gap-1">
                     {job.requiredSkills.slice(0, 4).map((sk, i) => (
                       <span key={i} className="text-[11px] font-mono font-semibold bg-white text-[#16A34A] border border-emerald-200 px-2 py-0.5 rounded">
@@ -66,7 +71,7 @@ export const JobRecommendationSection: React.FC = () => {
                 {/* Skill Gap */}
                 {job.preferredSkills.length > 0 && (
                   <div className="space-y-1.5">
-                    <span className="text-[10px] font-bold text-[#5F6868] uppercase block font-mono">Skill Gap</span>
+                    <span className="text-[10px] font-bold text-[#5F6868] uppercase block font-mono">Preferred Qualifications</span>
                     <div className="flex flex-wrap gap-1">
                       {job.preferredSkills.slice(0, 2).map((sk, i) => (
                         <span key={i} className="text-[11px] font-mono font-semibold bg-white text-[#D97706] border border-amber-200 px-2 py-0.5 rounded">
@@ -80,16 +85,9 @@ export const JobRecommendationSection: React.FC = () => {
 
               <div className="pt-3 border-t border-[#E2E8E5] flex items-center justify-between">
                 <span className="text-[11px] font-semibold text-[#5F6868]">{job.type}</span>
-                <button 
-                  type="button"
-                  onClick={() => {
-                    const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(job.company + ' ' + job.title + ' jobs')}`;
-                    window.open(searchUrl, '_blank', 'noopener,noreferrer');
-                  }}
-                  className="text-xs font-bold text-[#168F70] hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  View Opportunity <ArrowUpRight className="w-3.5 h-3.5" />
-                </button>
+                <span className="text-xs font-bold text-[#168F70] flex items-center gap-1 font-mono">
+                  Demonstration Specification
+                </span>
               </div>
 
             </div>

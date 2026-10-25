@@ -181,27 +181,28 @@ export function analyzeResumeContent(
       weakBullets.push({
         original: bullet,
         reason: 'Begins with passive, duty-focused phrasing rather than an impactful active verb.',
-        suggestion: `Engineered and executed ${coreAction}, increasing system reliability and workflow efficiency by [20%].`
+        suggestion: `Engineered and executed ${coreAction}, increasing system reliability and workflow efficiency by [insert metric: e.g. 20%].`
       });
     } else if (!metricRegex.test(bullet) && bullet.length > 25 && weakBullets.length < 3) {
       weakBullets.push({
         original: bullet,
         reason: 'Statement describes a responsibility but lacks quantifiable impact, scale, or business outcome.',
-        suggestion: `${bullet.replace(/\.$/, '')}, achieving measurable throughput gains across [10k+] monthly operations.`
+        suggestion: `${bullet.replace(/\.$/, '')}, achieving [insert outcome: e.g., 25% latency reduction / $X saved / N users supported].`
       });
     }
   }
 
-  // 5. Keyword & Job Matching Evaluation
-  let jobMatchScore = 80;
+  // 5. Keyword & Job Matching Evaluation (Strictly Evidence-Based)
+  let jobMatchScore = 0;
   let matchedKeywords: string[] = [];
   let missingKeywords: string[] = [];
+  const hasTargetJob = !!(jobDescription && jobDescription.trim().length >= 20);
 
-  if (jobDescription && jobDescription.trim().length > 20) {
+  if (hasTargetJob) {
     const jdSkills = new Set<string>();
     for (const [_, skillsList] of Object.entries(SKILLS_TAXONOMY)) {
       for (const skill of skillsList) {
-        if (matchSkillInText(skill, jobDescription)) {
+        if (matchSkillInText(skill, jobDescription!)) {
           jdSkills.add(skill);
         }
       }
@@ -212,17 +213,8 @@ export function analyzeResumeContent(
       matchedKeywords = jdRequired.filter(s => detectedSkillsSet.has(s));
       missingKeywords = jdRequired.filter(s => !detectedSkillsSet.has(s));
       const ratio = matchedKeywords.length / jdRequired.length;
-      jobMatchScore = Math.min(96, Math.max(45, Math.round(ratio * 100)));
-    } else {
-      matchedKeywords = detectedSkills.slice(0, 6);
-      missingKeywords = ['Docker', 'AWS', 'CI/CD'];
-      jobMatchScore = 75;
+      jobMatchScore = Math.min(100, Math.max(0, Math.round(ratio * 100)));
     }
-  } else {
-    const benchmarkSkills = ['Git', 'REST API', 'SQL', 'Docker', 'CI/CD', 'Unit Testing', 'TypeScript', 'Agile'];
-    matchedKeywords = benchmarkSkills.filter(s => detectedSkillsSet.has(s));
-    missingKeywords = benchmarkSkills.filter(s => !detectedSkillsSet.has(s));
-    jobMatchScore = Math.min(94, Math.max(60, Math.round((matchedKeywords.length / benchmarkSkills.length) * 100)));
   }
 
   // 6. ATS Essentials Checklist
@@ -314,48 +306,82 @@ export function analyzeResumeContent(
     }
   ];
 
-  // 8. Deterministic Scoring Logic
-  let atsScore = 50;
-  if (isPdfOrDocx) atsScore += 15;
-  if (email) atsScore += 15;
+  // 8. Deterministic Additive Scoring Logic (0-100 normalized)
+  // Each pillar starts at 0 and accumulates points strictly based on evidence found in text
+
+  // A. ATS & Parsing Score (25% weight)
+  let atsScore = 0;
+  if (isPdfOrDocx) atsScore += 20;
+  if (email) atsScore += 12;
   if (phone) atsScore += 10;
+  if (hasLinkedin || hasGithub || hasPortfolio) atsScore += 8;
   if (hasExperience) atsScore += 15;
   if (hasEducation) atsScore += 10;
-  if (hasLinkedin || hasGithub) atsScore += 10;
-  if (text.length > 200) atsScore += 5;
-  atsScore = Math.min(100, Math.max(30, atsScore));
+  if (hasSkills) atsScore += 10;
+  if (text.length >= 800) atsScore += 15;
+  else if (text.length >= 400) atsScore += 10;
+  else if (text.length >= 150) atsScore += 5;
+  atsScore = Math.min(100, Math.max(5, atsScore));
 
-  let contentScore = 55;
+  // B. Content Impact Score (25% weight)
+  let contentScore = Math.min(20, bulletLines.length * 4);
   const strongVerbCount = STRONG_VERBS.filter(v => textLower.includes(v)).length;
-  contentScore += Math.min(25, strongVerbCount * 3);
-  contentScore += Math.min(20, quantifiedAchievementsCount * 4);
+  contentScore += Math.min(30, strongVerbCount * 3);
+  contentScore += Math.min(40, quantifiedAchievementsCount * 10);
+  if (hasSummary) contentScore += 10;
+  if (hasProjects) contentScore += 10;
+  if (hasCertifications) contentScore += 10;
   contentScore -= Math.min(20, weakBullets.length * 4);
-  if (hasSummary) contentScore += 5;
-  contentScore = Math.min(98, Math.max(35, contentScore));
+  contentScore = Math.min(100, Math.max(0, contentScore));
 
-  let skillsScore = 40;
-  skillsScore += Math.min(35, detectedSkills.length * 4);
-  skillsScore += Math.min(20, skillStrength.length * 5);
-  if (hasSkills) skillsScore += 10;
-  skillsScore = Math.min(98, Math.max(30, skillsScore));
+  // C. Skills & Depth Score (25% weight)
+  let skillsScore = 0;
+  skillsScore += Math.min(50, detectedSkills.length * 4);
+  if (hasSkills) skillsScore += 20;
+  skillsScore += Math.min(30, skillStrength.length * 10);
+  skillsScore = Math.min(100, Math.max(0, skillsScore));
 
-  let recruiterScore = 50;
+  // D. Recruiter Readability & Completeness Score (25% weight)
+  let recruiterScore = 0;
   if (hasExperience) recruiterScore += 15;
-  if (hasLinkedin) recruiterScore += 10;
-  if (quantifiedAchievementsCount >= 3) recruiterScore += 15;
-  if (detectedSkills.length >= 6) recruiterScore += 10;
-  if (hasProjects) recruiterScore += 10;
-  recruiterScore = Math.min(96, Math.max(40, recruiterScore));
+  if (bulletLines.length >= 3) recruiterScore += 10;
+  if (hasEducation) recruiterScore += 20;
+  if (hasProjects) recruiterScore += 20;
+  if (hasLinkedin) recruiterScore += 8;
+  if (hasGithub) recruiterScore += 7;
+  if (quantifiedAchievementsCount >= 3) recruiterScore += 20;
+  else if (quantifiedAchievementsCount >= 1) recruiterScore += 10;
+  recruiterScore = Math.min(100, Math.max(0, recruiterScore));
 
-  const overallScore = Math.round(
-    atsScore * 0.30 +
-    contentScore * 0.25 +
-    skillsScore * 0.20 +
-    recruiterScore * 0.25
-  );
+  // E. Overall Score Calculation
+  let overallScore = 0;
+  if (hasTargetJob && jobMatchScore > 0) {
+    // 50% General Resume Quality + 50% Target Job Match Alignment
+    const generalQuality = (atsScore * 0.25 + contentScore * 0.25 + skillsScore * 0.25 + recruiterScore * 0.25);
+    overallScore = Math.round(generalQuality * 0.50 + jobMatchScore * 0.50);
+  } else {
+    // 100% General Resume Quality across 4 pillars (25% each)
+    overallScore = Math.round(
+      atsScore * 0.25 +
+      contentScore * 0.25 +
+      skillsScore * 0.25 +
+      recruiterScore * 0.25
+    );
+  }
+  overallScore = Math.min(100, Math.max(0, overallScore));
 
   // 9. Action Plan
   const actionPlan: AnalysisReport['actionPlan'] = [];
+
+  if (!hasTargetJob) {
+    actionPlan.push({
+      priority: 'HIGH',
+      title: 'Compare with a target job description to evaluate role-specific fit',
+      reason: 'Applicant tracking systems rank resumes against specific job postings. Matching requires comparing your resume with real job requirements.',
+      action: 'Provide a target job posting in the Job Matcher or Report section to calculate your role-specific match score and identify missing requirements.',
+      suggestionSample: 'Paste job description text to see precise keyword alignment and missing skills.'
+    });
+  }
 
   if (quantifiedAchievementsCount < 4) {
     actionPlan.push({
@@ -363,7 +389,7 @@ export function analyzeResumeContent(
       title: 'Strengthen experience bullet points with quantifiable metrics',
       reason: 'Recruiters evaluate engineering impact by metrics (e.g., % improvement, $ revenue, user count, latency reduction).',
       action: 'Review bullet points and replace generic duties with "Action Verb + Technical Scope + Measurable Result".',
-      suggestionSample: weakBullets[0]?.suggestion || 'Engineered automated pipeline reducing test execution time by 35% across 500+ daily builds.'
+      suggestionSample: weakBullets[0]?.suggestion || 'Engineered automated pipeline reducing test execution time by [insert metric: e.g. 35%] across [N+] daily builds.'
     });
   }
 
@@ -395,6 +421,39 @@ export function analyzeResumeContent(
       action: 'Add a 3-sentence summary highlighting your years of experience, core stack, and standout achievements.',
       suggestionSample: `Results-driven software engineer specializing in ${detectedSkills.slice(0, 3).join(', ')} with a track record of delivering scalable web systems.`
     });
+  }
+
+  // Construct target job matches strictly from provided job description
+  let targetJobMatches: AnalysisReport['jobMatches'] = [];
+  let targetSkillGaps: AnalysisReport['skillGaps'] = [];
+
+  if (hasTargetJob) {
+    const jdLines = jobDescription!.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
+    const titleCandidate = jdLines.find(l => /engineer|developer|manager|lead|architect|analyst|designer|consultant|specialist|intern/i.test(l)) || jdLines[0] || 'Target Role Specification';
+    const cleanTitle = titleCandidate.replace(/^[#*\-•\s]+/, '').slice(0, 60);
+
+    targetJobMatches = [
+      {
+        id: 'user-target-job',
+        title: cleanTitle,
+        company: 'User-Supplied Job Specification',
+        location: 'Specified in target description',
+        type: 'Verified Comparison Target',
+        salary: 'As specified by employer',
+        matchScore: jobMatchScore,
+        matchedSkills: matchedKeywords,
+        missingSkills: missingKeywords,
+        description: jobDescription!.trim().slice(0, 240) + (jobDescription!.trim().length > 240 ? '...' : '')
+      }
+    ];
+
+    targetSkillGaps = missingKeywords.slice(0, 5).map((skill, idx) => ({
+      skill,
+      priority: (idx < 2 ? 'HIGH' : 'MEDIUM') as 'HIGH' | 'MEDIUM',
+      roleOccurrence: 'Explicit requirement in your provided target job description',
+      currentEvidence: `No textual mention of "${skill}" identified in your resume text.`,
+      recommendedAction: `If you possess hands-on proficiency with ${skill}, incorporate it with supporting project or work context.`
+    }));
   }
 
   return {
@@ -450,39 +509,8 @@ export function analyzeResumeContent(
       }
     },
     actionPlan,
-    jobMatches: [
-      {
-        id: 'job-1',
-        title: detectedSkills.some(s => ['React', 'Vue', 'Angular', 'Frontend'].includes(s)) ? 'Senior Frontend Engineer' : 'Backend Software Engineer',
-        company: 'Stripe',
-        location: 'San Francisco, CA / Remote',
-        type: 'Full-time',
-        salary: '$145,000 - $185,000',
-        matchScore: jobMatchScore,
-        matchedSkills: detectedSkills.slice(0, 5),
-        missingSkills: missingKeywords.slice(0, 2),
-        description: 'Building high-scale distributed payments infrastructure, modern user interfaces, and robust APIs.'
-      },
-      {
-        id: 'job-2',
-        title: 'Full Stack Engineer (TypeScript / Cloud)',
-        company: 'Vercel',
-        location: 'Remote',
-        type: 'Full-time',
-        salary: '$135,000 - $170,000',
-        matchScore: Math.min(98, Math.max(50, jobMatchScore + 4)),
-        matchedSkills: detectedSkills.filter(s => ['TypeScript', 'JavaScript', 'React', 'Node.js', 'SQL', 'Git', 'AWS'].includes(s)),
-        missingSkills: missingKeywords.slice(0, 2),
-        description: 'Crafting ultra-fast web experiences, developer tools, and serverless runtime cloud platforms.'
-      }
-    ],
-    skillGaps: missingKeywords.slice(0, 3).map((skill, idx) => ({
-      skill,
-      priority: (idx === 0 ? 'HIGH' : 'MEDIUM') as 'HIGH' | 'MEDIUM',
-      roleOccurrence: `Found in ${65 - idx * 12}% of target postings in this domain.`,
-      currentEvidence: 'Competency not explicitly detected in experience or skills block.',
-      recommendedAction: `Incorporate practical project implementation of ${skill} and list in Skills.`
-    }))
+    jobMatches: targetJobMatches,
+    skillGaps: targetSkillGaps
   };
 }
 

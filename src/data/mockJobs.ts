@@ -14,18 +14,18 @@ export interface JobPosting {
 
 export const MOCK_JOBS: JobPosting[] = [
   {
-    id: 'job-swe-stripe',
-    title: 'Backend Software Engineer',
-    company: 'Stripe',
-    location: 'San Francisco, CA / Remote',
-    type: 'Full-time',
-    salary: '$145,000 - $180,000',
+    id: 'job-swe-benchmark',
+    title: 'Backend Software Engineer (Benchmark Spec)',
+    company: 'Fintech Infrastructure Spec',
+    location: 'Remote / US',
+    type: 'Full-time Benchmark',
+    salary: 'Industry Standard Range',
     tags: ['Backend', 'Python', 'SQL', 'Microservices', 'AWS'],
     requiredSkills: ['Python', 'SQL', 'REST API', 'PostgreSQL', 'Docker', 'AWS'],
     preferredSkills: ['Redis', 'Kubernetes', 'CI/CD', 'System Design'],
     education: 'Bachelor degree in Computer Science or equivalent',
-    description: `About Stripe:
-Stripe is a financial infrastructure platform for businesses. Millions of companies—from the world's largest enterprises to the most ambitious startups—use Stripe to accept payments, grow their revenue, and accelerate new business opportunities.
+    description: `Role Overview:
+Fintech infrastructure role requiring high-volume distributed backend services and APIs.
 
 Responsibilities:
 • Architect, build, and maintain high-volume distributed backend services and APIs.
@@ -38,18 +38,18 @@ Requirements:
 • Familiarity with containerization (Docker) and cloud deployments (AWS or GCP).`
   },
   {
-    id: 'job-fullstack-vercel',
-    title: 'Full Stack Engineer (React / Node)',
-    company: 'Vercel',
+    id: 'job-fullstack-benchmark',
+    title: 'Full Stack Engineer (Benchmark Spec)',
+    company: 'Web Platform Spec',
     location: 'Remote',
-    type: 'Full-time',
-    salary: '$135,000 - $170,000',
+    type: 'Full-time Benchmark',
+    salary: 'Industry Standard Range',
     tags: ['React', 'TypeScript', 'Node.js', 'Tailwind', 'Vite'],
     requiredSkills: ['JavaScript', 'TypeScript', 'React', 'Node.js', 'Tailwind CSS', 'REST API'],
     preferredSkills: ['Next.js', 'GraphQL', 'Jest', 'Serverless'],
     education: 'Bachelor in CS or equivalent field experience',
-    description: `About Vercel:
-Vercel is the developer platform for modern web applications. We build tools that empower developers to create fast, scalable, and beautiful websites.
+    description: `Role Overview:
+Developer platform role building modern web applications, high-performance interfaces, and serverless runtime systems.
 
 Responsibilities:
 • Build high-performance frontend interfaces in React and TypeScript.
@@ -62,41 +62,51 @@ Requirements:
 • Strong passion for developer experience and clean API design.`
   },
   {
-    id: 'job-ml-anthropic',
-    title: 'Machine Learning Engineer Intern / Junior',
-    company: 'Anthropic',
-    location: 'San Francisco, CA',
-    type: 'Full-time',
-    salary: '$150,000 - $190,000',
+    id: 'job-ml-benchmark',
+    title: 'Machine Learning Engineer (Benchmark Spec)',
+    company: 'Applied ML Research Spec',
+    location: 'San Francisco, CA / Remote',
+    type: 'Full-time Benchmark',
+    salary: 'Industry Standard Range',
     tags: ['Python', 'PyTorch', 'LLMs', 'FastAPI', 'Docker'],
     requiredSkills: ['Python', 'PyTorch', 'FastAPI', 'Docker', 'Git', 'SQL'],
     preferredSkills: ['Transformers', 'Vector DBs', 'CUDA', 'AWS'],
     education: 'Degree in Computer Science, Data Science or AI',
-    description: `About Anthropic:
-Anthropic is an AI safety and research company building reliable, interpretable, and steerable AI systems.
+    description: `Role Overview:
+Applied AI engineering role building robust data pipelines, model evaluation harnesses, and inference APIs.
 
 Responsibilities:
 • Implement data preprocessing, tokenization, and model evaluation pipelines in PyTorch.
 • Build API endpoints using FastAPI for internal LLM benchmarking tools.
-• Optimize model inference latency and containerized deployments.`
+• Optimize model inference latency and containerized deployments.
+
+Requirements:
+• Hands-on proficiency with Python, PyTorch, and Linux environments.
+• Experience building RESTful APIs with FastAPI or Flask.
+• Solid background in vector databases and model evaluation metrics.`
   },
   {
-    id: 'job-pm-linear',
-    title: 'Product Manager — Developer Tools',
-    company: 'Linear',
+    id: 'job-pm-benchmark',
+    title: 'Product Manager (Benchmark Spec)',
+    company: 'SaaS Workflow Tools Spec',
     location: 'Remote',
-    type: 'Full-time',
-    salary: '$150,000 - $185,000',
+    type: 'Full-time Benchmark',
+    salary: 'Industry Standard Range',
     tags: ['Product Strategy', 'Figma', 'Agile', 'Analytics', 'SQL'],
     requiredSkills: ['Product Strategy', 'Figma', 'Agile', 'SQL', 'A/B Testing'],
     preferredSkills: ['Mixpanel', 'Jira', 'Developer Tools'],
     education: 'Bachelor degree or equivalent experience',
-    description: `About Linear:
-Linear is a modern issue tracking and project management tool designed for high-performing software teams.
+    description: `Role Overview:
+Modern issue tracking and project management product leadership role.
 
 Responsibilities:
-• Define product requirements, user flows, and roadmap features for Linear integrations.
+• Define product requirements, user flows, and roadmap features for integrations.
 • Work directly with engineering and design to ship polished software experiences.
-• Analyze user churn, activation funnels, and customer feedback.`
+• Analyze user churn, activation funnels, and customer feedback.
+
+Requirements:
+• 3+ years of product management experience shipping technical software products.
+• Proven ability to translate complex user workflows into intuitive specifications.
+• Strong data analysis skills using SQL and product analytics platforms.`
   }
 ];

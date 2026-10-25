@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, ExternalLink } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Lock, Scale, Target, Sparkles, FileText } from 'lucide-react';
 
 export const TestimonialSection: React.FC = () => {
   return (
@@ -13,57 +13,59 @@ export const TestimonialSection: React.FC = () => {
       <div className="relative z-10 max-w-[1240px] mx-auto px-6 sm:px-8 space-y-10">
         
         {/* Upper-Left Heading (Left-Aligned) */}
-        <div className="max-w-[520px]">
-          <h2 className="text-3xl sm:text-4xl lg:text-[46px] font-bold text-[#293330] tracking-tight leading-[1.15] font-sans">
-            Trusted by people building their next opportunity
+        <div className="max-w-[620px] space-y-2">
+          <span className="text-[12px] font-bold uppercase tracking-[2px] text-[#16B889] font-mono block">
+            DATA INTEGRITY & ARCHITECTURE
+          </span>
+          <h2 className="text-3xl sm:text-4xl lg:text-[44px] font-bold text-[#293330] tracking-tight leading-[1.15] font-sans">
+            Built on 100% Real-Data Accuracy & Explainability
           </h2>
+          <p className="text-[15.5px] text-[#55625F] leading-relaxed pt-1">
+            HireLens rejects fabricated metrics, simulated market claims, and invented qualifications. Every evaluation is grounded in verifiable evidence.
+          </p>
         </div>
 
-        {/* Asymmetric Masonry Grid */}
+        {/* Asymmetric Grid */}
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start pt-2">
           
           {/* LEFT COLUMN (4 Cols) */}
           <div className="md:col-span-4 space-y-6">
             
-            {/* Card 1: Aditi */}
-            <div className="bg-white rounded-[5px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-[20px] h-[20px] rounded-[3px] bg-[#35B98B] flex items-center justify-center text-white">
-                    <Star className="w-3 h-3 fill-white text-white" />
-                  </div>
-                ))}
+            {/* Card 1: Zero Hallucinated Credentials */}
+            <div className="bg-white rounded-[14px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
+              <div className="w-10 h-10 rounded-xl bg-[#EAF8F3] text-[#16B889] flex items-center justify-center">
+                <ShieldCheck className="w-5 h-5" />
               </div>
 
-              <div className="text-[13px] text-[#68746F] font-sans">2 days ago</div>
+              <h3 className="text-[16px] font-bold text-[#293330] font-sans">
+                Zero Invented Qualifications
+              </h3>
 
-              <p className="text-[15px] text-[#293330] leading-[1.5] font-sans">
-                The precise AI guided suggestions and ATS keyword templates are easy to edit and update quickly. Really user friendly.
+              <p className="text-[14px] text-[#55625F] leading-[1.6] font-sans">
+                We never inject fabricated numbers, made-up certifications, or imagined achievements into your resume. Every suggestion is explicitly mapped to your submitted text.
               </p>
 
-              <div className="text-[13px] font-semibold text-[#293330] font-sans pt-1">
-                — Aditi
+              <div className="text-[12px] font-mono font-bold text-[#16B889] pt-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Factual Grounding
               </div>
             </div>
 
-            {/* Card 4: Meera */}
-            <div className="bg-white rounded-[5px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-[20px] h-[20px] rounded-[3px] bg-[#35B98B] flex items-center justify-center text-white">
-                    <Star className="w-3 h-3 fill-white text-white" />
-                  </div>
-                ))}
+            {/* Card 2: Transparent Scoring Formulas */}
+            <div className="bg-white rounded-[14px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
+              <div className="w-10 h-10 rounded-xl bg-[#EAF8F3] text-[#16B889] flex items-center justify-center">
+                <Scale className="w-5 h-5" />
               </div>
 
-              <div className="text-[13px] text-[#68746F] font-sans">2 days ago</div>
+              <h3 className="text-[16px] font-bold text-[#293330] font-sans">
+                Transparent Mathematical Scoring
+              </h3>
 
-              <p className="text-[15px] text-[#293330] leading-[1.5] font-sans">
-                Great tool for resume building. Clean, simple and actually helpful. Definitely recommended.
+              <p className="text-[14px] text-[#55625F] leading-[1.6] font-sans">
+                No mystery scores or random dice rolls. Every point reflects verified formulas: ATS (30%), Content (25%), Skills (20%), and Recruiter Readability (25%).
               </p>
 
-              <div className="text-[13px] font-semibold text-[#293330] font-sans pt-1">
-                — Meera
+              <div className="text-[12px] font-mono font-bold text-[#16B889] pt-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Explainable Architecture
               </div>
             </div>
 
@@ -72,42 +74,43 @@ export const TestimonialSection: React.FC = () => {
           {/* CENTER COLUMN (4 Cols) */}
           <div className="md:col-span-4 space-y-6 md:-mt-8">
             
-            {/* Center Stat Card */}
-            <div className="bg-white/95 backdrop-blur-xs rounded-[5px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-2 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1">
-                  {[...Array(5)].map((_, i) => (
-                    <div key={i} className="w-[20px] h-[20px] rounded-[3px] bg-[#35B98B] flex items-center justify-center text-white">
-                      <Star className="w-3 h-3 fill-white text-white" />
-                    </div>
-                  ))}
-                </div>
-                <span className="text-[14px] font-bold text-[#293330] font-sans">4.8 Rating</span>
+            {/* Center Core Guarantee Card */}
+            <div className="bg-white/95 backdrop-blur-xs rounded-[16px] border border-[#BDEBDC] p-6 shadow-[0_8px_24px_rgba(22,184,137,0.14)] space-y-3 hover:-translate-y-[3px] transition-all duration-200">
+              <div className="inline-flex items-center gap-2 bg-[#DDF5EC] text-[#129A72] border border-[#BDEBDC] px-3 py-1 rounded-full text-xs font-mono font-bold">
+                <Sparkles className="w-3.5 h-3.5 text-[#16B889]" />
+                <span>100% REAL DATA GUARANTEE</span>
               </div>
 
-              <p className="text-[17px] font-bold text-[#293330] leading-[1.35] font-sans pt-1">
-                2,400+ candidates have used HireLens to improve their resumes.
+              <h3 className="text-[18px] font-bold text-[#293330] leading-[1.3] font-sans">
+                Evidence-Based Resume Analysis & Gap Auditing
+              </h3>
+
+              <p className="text-[14px] text-[#55625F] leading-[1.6] font-sans">
+                Every requirement match, keyword overlap, and identified skill gap is derived strictly from candidate text and target job specifications.
               </p>
+
+              <div className="pt-2 border-t border-[#EEF2F0] flex items-center justify-between text-xs text-[#55625F] font-mono">
+                <span>Deterministic Rules</span>
+                <span className="font-bold text-[#16B889]">Auditable</span>
+              </div>
             </div>
 
-            {/* Center Testimonial Card (Rohan) */}
-            <div className="bg-white rounded-[5px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-[20px] h-[20px] rounded-[3px] bg-[#35B98B] flex items-center justify-center text-white">
-                    <Star className="w-3 h-3 fill-white text-white" />
-                  </div>
-                ))}
+            {/* Center Card 2: Deterministic Local Processing */}
+            <div className="bg-white rounded-[14px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
+              <div className="w-10 h-10 rounded-xl bg-[#EAF8F3] text-[#16B889] flex items-center justify-center">
+                <FileText className="w-5 h-5" />
               </div>
 
-              <div className="text-[13px] text-[#68746F] font-sans">3 days ago</div>
+              <h3 className="text-[16px] font-bold text-[#293330] font-sans">
+                Reproducible Local Evaluation
+              </h3>
 
-              <p className="text-[15px] text-[#293330] leading-[1.5] font-sans">
-                HireLens makes it easy to create and maintain your CV, as well as adapting it for different jobs. It also allows you to keep track of applications and what stage you are in the process.
+              <p className="text-[14px] text-[#55625F] leading-[1.6] font-sans">
+                HireLens uses structured 200+ skill taxonomies and document grammar engines to guarantee stable, consistent evaluations without arbitrary scoring swings.
               </p>
 
-              <div className="text-[13px] font-semibold text-[#293330] font-sans pt-1">
-                — Rohan
+              <div className="text-[12px] font-mono font-bold text-[#16B889] pt-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Consistent & Reliable
               </div>
             </div>
 
@@ -116,65 +119,46 @@ export const TestimonialSection: React.FC = () => {
           {/* RIGHT COLUMN (4 Cols) */}
           <div className="md:col-span-4 space-y-6 md:pt-4">
             
-            {/* Card 5: Arjun */}
-            <div className="bg-white rounded-[5px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-[20px] h-[20px] rounded-[3px] bg-[#35B98B] flex items-center justify-center text-white">
-                    <Star className="w-3 h-3 fill-white text-white" />
-                  </div>
-                ))}
+            {/* Card 5: Real-World Requirements Only */}
+            <div className="bg-white rounded-[14px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
+              <div className="w-10 h-10 rounded-xl bg-[#EAF8F3] text-[#16B889] flex items-center justify-center">
+                <Target className="w-5 h-5" />
               </div>
 
-              <div className="text-[13px] text-[#68746F] font-sans">3 days ago</div>
+              <h3 className="text-[16px] font-bold text-[#293330] font-sans">
+                User-Supplied Job Matching
+              </h3>
 
-              <p className="text-[15px] text-[#293330] leading-[1.5] font-sans">
-                It is a fast application which automates the tedious parts of tailoring my CV.
+              <p className="text-[14px] text-[#55625F] leading-[1.6] font-sans">
+                We never display fabricated jobs or fake company openings. Match scores are only calculated against actual job descriptions you supply.
               </p>
 
-              <div className="text-[13px] font-semibold text-[#293330] font-sans pt-1">
-                — Arjun
+              <div className="text-[12px] font-mono font-bold text-[#16B889] pt-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> No Fake Vacancies
               </div>
             </div>
 
-            {/* Card 2: Jacques */}
-            <div className="bg-white rounded-[5px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="w-[20px] h-[20px] rounded-[3px] bg-[#35B98B] flex items-center justify-center text-white">
-                    <Star className="w-3 h-3 fill-white text-white" />
-                  </div>
-                ))}
+            {/* Card 6: Privacy by Design */}
+            <div className="bg-white rounded-[14px] border border-[#EEF2F0] p-6 shadow-[0_5px_18px_rgba(20,35,30,0.08)] space-y-3 hover:-translate-y-[3px] hover:shadow-[0_8px_24px_rgba(20,35,30,0.12)] transition-all duration-200">
+              <div className="w-10 h-10 rounded-xl bg-[#EAF8F3] text-[#16B889] flex items-center justify-center">
+                <Lock className="w-5 h-5" />
               </div>
 
-              <div className="text-[13px] text-[#68746F] font-sans">4 days ago</div>
+              <h3 className="text-[16px] font-bold text-[#293330] font-sans">
+                Client Privacy & Control
+              </h3>
 
-              <p className="text-[15px] text-[#293330] leading-[1.5] font-sans">
-                The line-by-line suggestions were the most useful part. I could immediately understand what to improve before applying.
+              <p className="text-[14px] text-[#55625F] leading-[1.6] font-sans">
+                Your resume text stays strictly within your active workspace. Candidate documents are never sold, syndicated, or used for third-party commercial training.
               </p>
 
-              <div className="text-[13px] font-semibold text-[#293330] font-sans pt-1">
-                — Jacques
+              <div className="text-[12px] font-mono font-bold text-[#16B889] pt-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5" /> Fully Confidential
               </div>
             </div>
 
           </div>
 
-        </div>
-
-        {/* BOTTOM CENTER REVIEWS LINK CARD */}
-        <div className="pt-4 flex justify-center">
-          <div className="bg-white/95 backdrop-blur-xs rounded-[5px] border border-[#EEF2F0] px-8 py-4 text-center shadow-[0_4px_14px_rgba(20,35,30,0.06)] hover:-translate-y-[2px] transition-all">
-            <span className="text-[13px] text-[#68746F] font-sans block mb-1">
-              Read reviews or leave yours at:
-            </span>
-            <a
-              href="#sec-upload"
-              className="text-[14px] font-bold text-[#27B889] hover:underline inline-flex items-center gap-1 font-sans"
-            >
-              Reviews.io <ExternalLink className="w-3.5 h-3.5" />
-            </a>
-          </div>
         </div>
 
       </div>

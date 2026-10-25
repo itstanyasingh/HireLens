@@ -125,14 +125,14 @@ export function validateExtractedResumeText(rawText: string, fileName: string = 
   const commonWordRatio = recognizedCommonWordCount / totalTokens;
   const validWordRatio = validWordLikeCount / totalTokens;
 
-  // If more than 8% of tokens are corrupted glyph strings, or less than 50% are valid word-like tokens
-  if (corruptedRatio > 0.08 || validWordRatio < 0.50 || recognizedCommonWordCount < 3) {
+  // Reject only if document is heavily corrupted glyph garbage or lacks basic printable words
+  if (corruptedRatio > 0.25 || (validWordLikeCount < 4 && text.length < 100)) {
     if (process.env.NODE_ENV !== 'production') {
       console.warn(`[VALIDATION REJECTED] File: ${fileName} | Corrupted ratio: ${(corruptedRatio * 100).toFixed(1)}% | Common words: ${recognizedCommonWordCount} | Valid words: ${(validWordRatio * 100).toFixed(1)}%`);
     }
     return {
       isValid: false,
-      errorMessage: "Unable to read this resume correctly. The document appears to have non-standard font encoding or unreadable text. Please upload a text-based PDF or DOCX file.",
+      errorMessage: "Unable to read readable text from this file. The document may be an un-parsed image scan or heavily encrypted PDF. Please upload a text-based PDF, DOCX, or TXT file.",
       isScanned: true,
     };
   }

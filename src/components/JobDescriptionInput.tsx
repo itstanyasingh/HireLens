@@ -69,10 +69,10 @@ export const JobDescriptionInput: React.FC<JobDescriptionInputProps> = ({
             <button
               type="button"
               onClick={() => setShowSamples(!showSamples)}
-              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1"
+              className="text-xs font-semibold text-indigo-600 hover:text-indigo-800 flex items-center gap-1 cursor-pointer"
             >
               <Briefcase className="w-3.5 h-3.5" />
-              {showSamples ? 'Hide Sample Job Posts' : 'Load Sample Job Posting'}
+              {showSamples ? 'Hide Benchmark Specifications' : 'Load Benchmark Spec for Testing'}
             </button>
           </div>
 

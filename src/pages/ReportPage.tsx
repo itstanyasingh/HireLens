@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { AnalysisReport, saveToHistory } from '../services/api';
+import { AnalysisReport, saveToHistory, analyzeResume } from '../services/api';
 import { ReportSidebar } from '../components/ReportSidebar';
 import { ScoreCircle } from '../components/ScoreCircle';
 import { CheckCategory, CategorySummary } from '../components/CheckCategory';
@@ -9,7 +9,7 @@ import { SkillGapCard } from '../components/SkillGapCard';
 import { ResumeFixerModal } from '../components/ResumeFixerModal';
 import { ScoringMethodologyModal } from '../components/ScoringMethodologyModal';
 import { downloadAnalysisReport } from '../utils/reportExporter';
-import { Download, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Sparkles, FileText, ExternalLink, HelpCircle, ShieldCheck, Scale, Printer, Check } from 'lucide-react';
+import { Download, RefreshCw, CheckCircle2, AlertTriangle, XCircle, Sparkles, FileText, ExternalLink, HelpCircle, ShieldCheck, Scale, Printer, Check, Target } from 'lucide-react';
 
 interface ReportPageProps {
   report: AnalysisReport;
@@ -24,6 +24,24 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
   const [fixerOriginalText, setFixerOriginalText] = useState('');
   const [fixerReason, setFixerReason] = useState('');
   const [fixSuccessMessage, setFixSuccessMessage] = useState<string | null>(null);
+  const [targetJdInput, setTargetJdInput] = useState('');
+  const [isComparing, setIsComparing] = useState(false);
+
+  const handleCompareWithJob = async () => {
+    if (!targetJdInput || targetJdInput.trim().length < 20) return;
+    setIsComparing(true);
+    try {
+      const updated = await analyzeResume(currentReport.resumeText || '', currentReport.fileName, targetJdInput);
+      setCurrentReport(updated);
+      saveToHistory(updated);
+      setFixSuccessMessage('Job comparison complete! Match score and requirement evidence updated.');
+      setTimeout(() => setFixSuccessMessage(null), 4000);
+    } catch (e: any) {
+      console.error('Job comparison failed:', e);
+    } finally {
+      setIsComparing(false);
+    }
+  };
 
   useEffect(() => {
     setCurrentReport(report);
@@ -607,31 +625,70 @@ export const ReportPage: React.FC<ReportPageProps> = ({ report, onAnalyzeAnother
             />
           </section>
 
-          {/* SECTION 9: Matched Jobs & Skill Gaps */}
+          {/* SECTION 9: Matched Job Requirements & Skill Gaps */}
           <section id="sec-jobmatches" className="space-y-8">
             
-            {/* Job Matches */}
             <div>
               <div className="mb-4 flex items-center justify-between">
                 <div>
                   <h3 className="text-xl font-bold text-slate-900 tracking-tight">
-                    Jobs That Match Your Profile
+                    Target Job Requirement Alignment
                   </h3>
                   <p className="text-xs text-slate-500">
-                    Calculated role compatibility based on skills, experience relevance, and keyword overlap.
+                    Calculated role compatibility based on documented textual evidence and keyword overlap.
                   </p>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {report.jobMatches.map((job) => (
-                  <JobMatchCard key={job.id} job={job} />
-                ))}
-              </div>
+              {currentReport.jobMatches && currentReport.jobMatches.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {currentReport.jobMatches.map((job) => (
+                    <JobMatchCard key={job.id} job={job} />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-7 space-y-4">
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-[#EAF8F3] text-[#16B889] flex items-center justify-center shrink-0">
+                      <Target className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-base text-slate-900">
+                        No Target Job Description Provided Yet
+                      </h4>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        HireLens never displays fabricated job openings, company salaries, or simulated match percentages. To see your verified job match percentage and exact skill gaps, compare your resume against a real job description.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 pt-2 border-t border-slate-100">
+                    <textarea
+                      rows={4}
+                      value={targetJdInput}
+                      onChange={(e) => setTargetJdInput(e.target.value)}
+                      placeholder="Paste the target job description or requirements here..."
+                      className="w-full text-xs font-mono bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-800 focus:bg-white focus:border-[#16B889] outline-none"
+                    />
+
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleCompareWithJob}
+                        disabled={isComparing || targetJdInput.trim().length < 20}
+                        className="bg-[#16B889] hover:bg-[#129A72] text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-xs flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                      >
+                        <Sparkles className="w-4 h-4" />
+                        <span>{isComparing ? 'Comparing...' : 'Compare With This Job'}</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Skill Gap Cards */}
-            <SkillGapCard skillGaps={report.skillGaps} />
+            <SkillGapCard skillGaps={currentReport.skillGaps} />
 
           </section>
 

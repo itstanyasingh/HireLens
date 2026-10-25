@@ -18,7 +18,9 @@ import {
   CheckCircle2, 
   ArrowRight,
   Eye,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Cpu,
+  Wand2
 } from 'lucide-react';
 import { PricingModal } from './PricingModal';
 import { AuthModal } from './AuthModal';
@@ -26,13 +28,18 @@ import { AuthModal } from './AuthModal';
 export type NavTab = 
   | 'landing' 
   | 'report' 
+  | 'match-lab'
+  | 'integrity-lab'
   | 'matcher' 
   | 'history' 
   | 'builder' 
   | 'tailor' 
   | 'cover-letter' 
   | 'tracker' 
-  | 'interview-prep';
+  | 'interview-prep'
+  | 'methodology'
+  | 'studio'
+  | 'templates';
 
 interface HeaderProps {
   activeTab: NavTab;
@@ -51,7 +58,20 @@ export const Header: React.FC<HeaderProps> = ({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [pricingModalOpen, setPricingModalOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [currentUser, setCurrentUser] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<string | null>(() => {
+    try {
+      return localStorage.getItem('hirelens_current_user');
+    } catch (e) {
+      return null;
+    }
+  });
+  const [currentPlan, setCurrentPlan] = useState<string>(() => {
+    try {
+      return localStorage.getItem('hirelens_plan_tier') || 'Free Starter';
+    } catch (e) {
+      return 'Free Starter';
+    }
+  });
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -80,10 +100,23 @@ export const Header: React.FC<HeaderProps> = ({
 
   const handleLoginSuccess = (email: string) => {
     setCurrentUser(email);
+    try {
+      localStorage.setItem('hirelens_current_user', email);
+    } catch (e) {}
   };
 
   const handleLogout = () => {
     setCurrentUser(null);
+    try {
+      localStorage.removeItem('hirelens_current_user');
+    } catch (e) {}
+  };
+
+  const handleSelectPlan = (plan: string) => {
+    setCurrentPlan(plan);
+    try {
+      localStorage.setItem('hirelens_plan_tier', plan);
+    } catch (e) {}
   };
 
   return (
@@ -151,13 +184,41 @@ export const Header: React.FC<HeaderProps> = ({
                     </button>
 
                     <button
-                      onClick={() => handleNavAction(undefined, 'matcher')}
-                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
+                      onClick={() => handleNavAction(undefined, 'match-lab')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group bg-[#F0FAF6]"
                     >
                       <Target className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
                       <div>
+                        <div className="font-bold text-[#127F5C] flex items-center gap-1.5">
+                          <span>Match Lab</span>
+                          <span className="bg-[#16B889] text-white text-[9px] px-1.5 py-0.2 rounded font-extrabold">NEW</span>
+                        </div>
+                        <div className="text-[11px] text-[#607D74]">Explainable match, formula audit & simulator</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction(undefined, 'integrity-lab')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group bg-[#F0FAF6]"
+                    >
+                      <ShieldCheck className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#127F5C] flex items-center gap-1.5">
+                          <span>Match Integrity Lab</span>
+                          <span className="bg-[#16B889] text-white text-[9px] px-1.5 py-0.2 rounded font-extrabold">NEW</span>
+                        </div>
+                        <div className="text-[11px] text-[#607D74]">Evidence audit, robustness & sensitivity tests</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction(undefined, 'matcher')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
+                    >
+                      <Target className="w-4 h-4 text-[#607D74] shrink-0 mt-0.5" />
+                      <div>
                         <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Job Matcher</div>
-                        <div className="text-[11px] text-[#788582]">Match role description & skill gaps</div>
+                        <div className="text-[11px] text-[#788582]">Quick role description check</div>
                       </div>
                     </button>
 
@@ -175,6 +236,20 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
 
+              {/* Match Lab Direct Link */}
+              <button
+                onClick={() => handleNavAction(undefined, 'match-lab')}
+                className={`py-2 flex items-center gap-1.5 transition-colors cursor-pointer font-bold ${
+                  activeTab === 'match-lab' ? 'text-[#16B889]' : 'text-[#273330] hover:text-[#16B889]'
+                }`}
+              >
+                <Target className="w-3.5 h-3.5 text-[#16B889]" />
+                <span>Match Lab</span>
+                <span className="bg-[#E6F8F2] text-[#0E7A5A] text-[9.5px] font-extrabold px-1.5 py-0.2 rounded-full border border-[#BCEFD9]">
+                  NEW
+                </span>
+              </button>
+
               {/* 2. Tools Dropdown */}
               <div className="relative">
                 <button
@@ -186,6 +261,20 @@ export const Header: React.FC<HeaderProps> = ({
 
                 {openDropdown === 'tools' && (
                   <div className="absolute top-full left-0 mt-2 w-80 bg-white rounded-2xl border border-[#E2E8E5] shadow-xl p-2.5 space-y-1 z-50 animate-fadeIn">
+                    <button
+                      onClick={() => handleNavAction(undefined, 'templates')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group bg-[#F0FAF6]"
+                    >
+                      <Layers className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#127F5C] flex items-center gap-1.5">
+                          <span>Resume Templates Gallery</span>
+                          <span className="bg-[#16B889] text-white text-[9px] px-1.5 py-0.2 rounded font-extrabold">NEW</span>
+                        </div>
+                        <div className="text-[11px] text-[#607D74]">Browse designs, filters, preview & wizard</div>
+                      </div>
+                    </button>
+
                     <button
                       onClick={() => handleNavAction(undefined, 'builder')}
                       className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
@@ -205,6 +294,17 @@ export const Header: React.FC<HeaderProps> = ({
                       <div>
                         <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Resume Tailor</div>
                         <div className="text-[11px] text-[#788582]">Target job keyword matching & bullet rewrites</div>
+                      </div>
+                    </button>
+
+                    <button
+                      onClick={() => handleNavAction(undefined, 'studio')}
+                      className="w-full text-left p-2.5 rounded-xl hover:bg-[#F4F9F7] text-xs transition-colors flex items-start gap-2.5 cursor-pointer group"
+                    >
+                      <Wand2 className="w-4 h-4 text-[#16B889] shrink-0 mt-0.5" />
+                      <div>
+                        <div className="font-bold text-[#273330] group-hover:text-[#16B889]">Resume Improvement Studio</div>
+                        <div className="text-[11px] text-[#788582]">Side-by-side bullet point refinement & review</div>
                       </div>
                     </button>
 
@@ -311,13 +411,7 @@ export const Header: React.FC<HeaderProps> = ({
                 )}
               </div>
 
-              {/* 4. Pricing Button */}
-              <button
-                onClick={() => setPricingModalOpen(true)}
-                className="hover:text-[#273330] transition-colors py-2 cursor-pointer font-semibold"
-              >
-                Pricing
-              </button>
+
 
               {/* Active Current Report Chip (if report loaded) */}
               {hasActiveReport && (
@@ -345,6 +439,13 @@ export const Header: React.FC<HeaderProps> = ({
                     {currentUser[0].toUpperCase()}
                   </div>
                   <span className="hidden md:inline truncate max-w-[120px]">{currentUser.split('@')[0]}</span>
+                  <button
+                    onClick={() => setPricingModalOpen(true)}
+                    className="bg-[#DDF5EC] text-[#127F5C] hover:bg-[#C2EFE0] text-[10px] font-extrabold px-2 py-0.5 rounded-md border border-[#B8EAD9] transition-colors cursor-pointer"
+                    title="Change subscription plan"
+                  >
+                    {currentPlan}
+                  </button>
                 </div>
                 <button
                   onClick={handleLogout}
@@ -401,6 +502,17 @@ export const Header: React.FC<HeaderProps> = ({
             </button>
 
             <button
+              onClick={() => handleNavAction(undefined, 'match-lab')}
+              className="w-full text-left px-3 py-2.5 rounded-xl bg-[#EAFBF5] text-sm font-bold text-[#127F5C] flex items-center justify-between border border-[#C6EFE0]"
+            >
+              <span className="flex items-center gap-1.5">
+                <Target className="w-4 h-4 text-[#16B889]" />
+                <span>Match Lab (Explainable Simulator)</span>
+              </span>
+              <span className="bg-[#16B889] text-white text-[9px] px-1.5 py-0.2 rounded font-extrabold">NEW</span>
+            </button>
+
+            <button
               onClick={() => handleNavAction('sec-features', 'landing')}
               className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F4F9F7] text-sm font-bold text-[#273330] flex items-center justify-between"
             >
@@ -424,6 +536,7 @@ export const Header: React.FC<HeaderProps> = ({
               <ArrowRight className="w-4 h-4 text-[#16B889]" />
             </button>
 
+
             {hasActiveReport && (
               <button
                 onClick={() => handleNavAction(undefined, 'report')}
@@ -433,17 +546,6 @@ export const Header: React.FC<HeaderProps> = ({
                 <CheckCircle2 className="w-4 h-4 text-[#16B889]" />
               </button>
             )}
-
-            <button
-              onClick={() => {
-                setMobileMenuOpen(false);
-                setPricingModalOpen(true);
-              }}
-              className="w-full text-left px-3 py-2.5 rounded-xl hover:bg-[#F4F9F7] text-sm font-bold text-[#273330] flex items-center justify-between"
-            >
-              <span>Plans & Pricing</span>
-              <CreditCard className="w-4 h-4 text-[#16B889]" />
-            </button>
           </div>
 
           <div className="pt-3 border-t border-[#EEF2F0] flex gap-3">
@@ -483,6 +585,7 @@ export const Header: React.FC<HeaderProps> = ({
       <PricingModal
         isOpen={pricingModalOpen}
         onClose={() => setPricingModalOpen(false)}
+        onSelectPlan={handleSelectPlan}
       />
 
       <AuthModal

@@ -41,14 +41,59 @@ describe('analyzeResumeContent Scoring Engine', () => {
     expect(report.skillsScore).toBeGreaterThanOrEqual(40);
     expect(report.recruiterScore).toBeGreaterThanOrEqual(40);
 
-    // Verify mathematical formula: Overall = (ATS * 0.3) + (Content * 0.25) + (Skills * 0.20) + (Recruiter * 0.25)
+    // Verify mathematical formula: Overall = (ATS * 0.25) + (Content * 0.25) + (Skills * 0.25) + (Recruiter * 0.25)
     const expectedOverall = Math.round(
-      report.atsScore * 0.30 +
+      report.atsScore * 0.25 +
       report.contentScore * 0.25 +
-      report.skillsScore * 0.20 +
+      report.skillsScore * 0.25 +
       report.recruiterScore * 0.25
     );
     expect(report.overallScore).toBe(expectedOverall);
+  });
+
+  it('produces significantly different, input-dependent scores for strong vs weak vs incomplete resumes', () => {
+    const strongResume = sampleCandidate;
+    const weakResume = `
+      John Doe
+      New York, NY | john.doe@email.com | (555) 123-4567
+
+      EXPERIENCE
+      Company ABC — Junior Developer
+      • Worked on a website using React.
+      • Helped with bug fixes and meetings.
+      • Responsible for database tasks.
+
+      EDUCATION
+      State University — B.S. Computer Science
+    `;
+    const incompleteDraft = `
+      Alex Smith
+      Junior Web Developer Candidate
+      New York, NY
+
+      WORK EXPERIENCE
+      • Worked on web apps using JavaScript and HTML.
+      • Helped team with daily bug fixes and maintenance.
+
+      EDUCATION
+      State College — Associate Degree in Computer Science
+    `;
+
+    const strongReport = analyzeResumeContent(strongResume, 'Strong.pdf');
+    const weakReport = analyzeResumeContent(weakResume, 'Weak.pdf');
+    const incompleteReport = analyzeResumeContent(incompleteDraft, 'Incomplete.docx');
+
+    // Strong resume must score higher than weak resume, which must score higher than incomplete draft
+    expect(strongReport.overallScore).toBeGreaterThan(weakReport.overallScore);
+    expect(weakReport.overallScore).toBeGreaterThan(incompleteReport.overallScore);
+
+    // Incomplete draft must receive low scores reflecting missing contact info, skills, and metrics
+    expect(incompleteReport.overallScore).toBeLessThan(45);
+    expect(incompleteReport.categories.skills.score).toBeLessThan(30);
+
+    // Strong resume must score high on content and skills
+    expect(strongReport.overallScore).toBeGreaterThan(75);
+    expect(strongReport.categories.skills.detectedSkills.length).toBeGreaterThan(10);
   });
 
   it('detects skills accurately from taxonomy', () => {
@@ -98,5 +143,35 @@ describe('analyzeResumeContent Scoring Engine', () => {
     expect(report.categories.keywords.matchedKeywords).toContain('Redis');
     expect(report.categories.keywords.missingKeywords).toContain('Kafka');
     expect(report.jobMatchScore).toBeGreaterThan(0);
+  });
+
+  it('never outputs fake external jobs or fabricated percentages when no job description is provided', () => {
+    const report = analyzeResumeContent(sampleCandidate, 'Sarah_Chen_Resume.pdf');
+
+    // Without a user-supplied target JD, jobMatches and skillGaps must not contain invented companies or fake salaries
+    expect(report.jobMatches).toEqual([]);
+    expect(report.skillGaps).toEqual([]);
+    expect(report.jobMatchScore).toBe(0);
+
+    // Action plan informs user to supply a target JD
+    const hasJdAction = report.actionPlan.some(a => a.title.toLowerCase().includes('target job description'));
+    expect(hasJdAction).toBe(true);
+  });
+
+  it('strictly maps skill gaps to target job requirements without fabricated market occurrence statistics', () => {
+    const jobDescription = `
+      Required: Python, Redis, Kafka, Cassandra, Kubernetes.
+    `;
+    const report = analyzeResumeContent(sampleCandidate, 'Sarah_Chen_Resume.pdf', jobDescription);
+
+    expect(report.jobMatches.length).toBe(1);
+    expect(report.jobMatches[0].title).toBeDefined();
+    expect(report.skillGaps.length).toBeGreaterThanOrEqual(1);
+
+    for (const gap of report.skillGaps) {
+      // Must NOT contain fabricated statistics like "68% of matching roles"
+      expect(gap.roleOccurrence).not.toMatch(/\d+%/);
+      expect(gap.roleOccurrence.toLowerCase()).toContain('target job description');
+    }
   });
 });

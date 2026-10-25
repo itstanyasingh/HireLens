@@ -16,6 +16,17 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
   const [isDragging, setIsDragging] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [inputMode, setInputMode] = useState<'upload' | 'paste'>('upload');
+  const [pastedText, setPastedText] = useState('');
+
+  const handlePastedAnalysis = () => {
+    setError(null);
+    if (!pastedText || pastedText.trim().length < 30) {
+      setError('Please paste at least 30 characters of resume content to analyze.');
+      return;
+    }
+    onStartAnalysis(pastedText.trim(), 'Pasted_Resume.txt');
+  };
 
   const handleFile = async (file: File) => {
     setError(null);
@@ -42,11 +53,16 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
         return;
       }
 
+      const cleanText = validation.cleanText || extractedText;
+
       setSelectedFile({
         name: file.name,
         size: file.size,
-        text: validation.cleanText || extractedText
+        text: cleanText
       });
+
+      // Automatically trigger analysis on upload
+      onStartAnalysis(cleanText, file.name);
     } catch (err: any) {
       console.error('File extraction error:', err);
       setError(err?.message || 'Unable to read this resume correctly. We couldn\'t extract readable text from this file. Please upload a text-based PDF or DOCX file.');
@@ -57,17 +73,23 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
 
   const handleRunAnalysis = () => {
     setError(null);
-    if (selectedFile) {
-      onStartAnalysis(selectedFile.text, selectedFile.name);
-    } else {
-      const sample = SAMPLE_RESUMES[0];
-      setSelectedFile({
-        name: sample.fileName,
-        size: 1024 * 35,
-        text: sample.resumeText
-      });
-      onStartAnalysis(sample.resumeText, sample.fileName);
+    if (isLoading) return;
+    if (!selectedFile) {
+      setError('Please upload your resume file (PDF, DOCX, or TXT) to run an analysis.');
+      return;
     }
+    onStartAnalysis(selectedFile.text, selectedFile.name);
+  };
+
+  const handleLoadSample = (sampleIndex: number) => {
+    setError(null);
+    const sample = SAMPLE_RESUMES[sampleIndex] || SAMPLE_RESUMES[0];
+    setSelectedFile({
+      name: sample.fileName,
+      size: 1024 * 35,
+      text: sample.resumeText
+    });
+    onStartAnalysis(sample.resumeText, sample.fileName);
   };
 
   return (
@@ -122,81 +144,164 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
             Analyze your resume for ATS compatibility, content quality, and recruiter-readiness — then see what needs improvement.
           </p>
 
-          {/* Upload Area (~500px wide, ~160px high) */}
-          <div className="w-full max-w-[490px] min-h-[160px] bg-white/90 backdrop-blur-xs border border-dashed border-[#84CEB9] rounded-[16px] p-6 sm:p-7 text-center space-y-3.5 shadow-[0_4px_24px_rgba(20,45,40,0.03)] flex flex-col justify-center">
+          {/* Mode Selector & Upload/Paste Card */}
+          <div className="w-full max-w-[490px] bg-white/95 backdrop-blur-xs border border-[#84CEB9] rounded-[18px] p-5 sm:p-6 shadow-[0_6px_30px_rgba(20,45,40,0.05)] space-y-4">
             
+            {/* Mode Toggle Buttons */}
+            <div className="flex items-center p-1 bg-[#F4F8F6] rounded-xl border border-[#DCE7E3]">
+              <button
+                type="button"
+                onClick={() => {
+                  setInputMode('upload');
+                  setError(null);
+                }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  inputMode === 'upload'
+                    ? 'bg-white text-[#127F5C] shadow-2xs'
+                    : 'text-[#61706B] hover:text-[#273330]'
+                }`}
+              >
+                Upload Document File
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setInputMode('paste');
+                  setError(null);
+                }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  inputMode === 'paste'
+                    ? 'bg-white text-[#127F5C] shadow-2xs'
+                    : 'text-[#61706B] hover:text-[#273330]'
+                }`}
+              >
+                Paste Resume Text
+              </button>
+            </div>
+
             {error && (
-              <div className="p-2 bg-rose-50 border border-rose-200 rounded text-xs text-rose-800 flex items-center justify-between">
+              <div className="p-2.5 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center justify-between">
                 <span>{error}</span>
-                <button onClick={() => setError(null)}><X className="w-4 h-4" /></button>
+                <button onClick={() => setError(null)} className="cursor-pointer"><X className="w-4 h-4" /></button>
               </div>
             )}
 
-            {!selectedFile ? (
-              <div
-                onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                onDragLeave={() => setIsDragging(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setIsDragging(false);
-                  if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
-                }}
-                onClick={() => fileInputRef.current?.click()}
-                className="cursor-pointer space-y-2"
-              >
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
-                  accept=".pdf,.docx,.txt"
-                  className="hidden"
+            {inputMode === 'upload' ? (
+              !selectedFile ? (
+                <div
+                  onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                  onDragLeave={() => setIsDragging(false)}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragging(false);
+                    if (e.dataTransfer.files?.[0]) handleFile(e.dataTransfer.files[0]);
+                  }}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="cursor-pointer space-y-3 py-3 px-2 border-2 border-dashed border-[#B8EAD9] rounded-xl hover:bg-[#F8FCFA] transition-colors text-center"
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={(e) => e.target.files?.[0] && handleFile(e.target.files[0])}
+                    accept=".pdf,.docx,.txt"
+                    className="hidden"
+                  />
+
+                  <p className="text-[14px] font-semibold text-[#273330]">
+                    Drop your resume here or choose a file
+                  </p>
+
+                  <p className="text-[11.5px] text-[#61706B]">
+                    PDF, DOCX, or TXT · Max 5MB
+                  </p>
+
+                  <div>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="h-[42px] px-7 bg-[#16B889] hover:bg-[#129A72] text-white font-bold text-[13.5px] rounded-[10px] transition-all shadow-xs hover:shadow-md inline-flex items-center justify-center cursor-pointer min-w-[170px]"
+                    >
+                      Choose File
+                    </button>
+                  </div>
+
+                  {/* Explicit Sample Profile Test Link */}
+                  <div className="pt-2 border-t border-[#EEF2F0]">
+                    <span className="text-[11px] text-[#61706B] block mb-1.5">Or test immediately with a sample profile:</span>
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLoadSample(0);
+                        }}
+                        className="text-[11px] font-semibold text-[#16B889] hover:underline bg-[#EAF8F3] hover:bg-[#DDF5EC] px-2.5 py-1 rounded border border-[#BDEBDC] cursor-pointer"
+                      >
+                        Sample Engineer
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleLoadSample(1);
+                        }}
+                        className="text-[11px] font-semibold text-[#16B889] hover:underline bg-[#EAF8F3] hover:bg-[#DDF5EC] px-2.5 py-1 rounded border border-[#BDEBDC] cursor-pointer"
+                      >
+                        Sample Product Lead
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="p-3.5 bg-[#F8FAF9] border border-[#E9ECEA] rounded-xl flex items-center justify-between">
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <FileCode className="w-5 h-5 text-[#16B889] shrink-0" />
+                    <span className="text-xs font-bold text-[#273330] truncate block">{selectedFile.name}</span>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleRunAnalysis}
+                      disabled={isLoading}
+                      className="bg-[#16B889] hover:bg-[#129A72] text-white font-bold text-xs px-4 py-2 rounded-[8px] shadow-xs cursor-pointer"
+                    >
+                      {isLoading ? 'Processing...' : 'Run Analysis'}
+                    </button>
+                    <button onClick={() => setSelectedFile(null)} className="text-[#61706B] hover:text-rose-600 cursor-pointer"><X className="w-4 h-4" /></button>
+                  </div>
+                </div>
+              )
+            ) : (
+              <div className="space-y-3 text-left">
+                <textarea
+                  rows={5}
+                  value={pastedText}
+                  onChange={(e) => {
+                    setPastedText(e.target.value);
+                    setError(null);
+                  }}
+                  placeholder="Paste your full resume text here (Summary, Work Experience, Education, Skills)..."
+                  className="w-full text-xs font-mono bg-[#FAFCFA] border border-[#DCE5E0] rounded-xl p-3 text-[#273330] focus:bg-white focus:border-[#16B889] outline-none transition-all resize-y"
                 />
 
-                <p className="text-[15px] font-semibold text-[#273330]">
-                  Drop your resume here or choose a file.
-                </p>
-
-                <p className="text-[12.5px] text-[#61706B]">
-                  PDF or DOCX · Max 2MB
-                </p>
-
-                <div className="pt-1.5">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      fileInputRef.current?.click();
-                    }}
-                    className="h-[48px] px-8 bg-[#16B889] hover:bg-[#129A72] text-white font-bold text-[14.5px] rounded-[8px] transition-all shadow-xs hover:shadow-md inline-flex items-center justify-center cursor-pointer min-w-[180px]"
-                  >
-                    Upload Your Resume
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="p-3 bg-[#F8FAF9] border border-[#E9ECEA] rounded-lg flex items-center justify-between">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <FileCode className="w-5 h-5 text-[#16B889] shrink-0" />
-                  <span className="text-xs font-bold text-[#273330] truncate block">{selectedFile.name}</span>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={handleRunAnalysis}
-                    disabled={isLoading}
-                    className="bg-[#16B889] hover:bg-[#129A72] text-white font-bold text-xs px-4 py-2 rounded-[6px] shadow-xs"
-                  >
-                    {isLoading ? 'Processing...' : 'Run Analysis'}
-                  </button>
-                  <button onClick={() => setSelectedFile(null)} className="text-[#61706B] hover:text-rose-600"><X className="w-4 h-4" /></button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handlePastedAnalysis}
+                  disabled={isLoading}
+                  className="w-full h-[44px] bg-[#16B889] hover:bg-[#129A72] text-white font-bold text-xs rounded-xl transition-all shadow-xs hover:shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  <span>Run Analysis on Pasted Text</span>
+                </button>
               </div>
             )}
 
             {/* Clean Privacy Notice */}
             <div className="text-[11.5px] text-[#61706B] flex items-center justify-center gap-1.5 pt-0.5">
               <Lock className="w-3.5 h-3.5 text-[#61706B]" />
-              <span>Your resume stays private.</span>
+              <span>Your resume stays private. Calculated 100% from your text.</span>
             </div>
 
           </div>
@@ -223,8 +328,8 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onStartAnalysis, isLoa
                   </div>
                   <span className="font-bold text-[16px] text-[#16B889] tracking-tight">HireLens</span>
                 </div>
-                <div className="text-[12.5px] font-medium text-[#788582]">
-                  Resume Analysis
+                <div className="text-[11px] font-mono font-bold text-[#16B889] bg-[#EAF8F3] border border-[#BDEBDC] px-2.5 py-0.5 rounded">
+                  ILLUSTRATIVE REPORT PREVIEW
                 </div>
               </div>
 

@@ -11,13 +11,19 @@ import {
   Send,
   Building2,
   User,
-  Briefcase
+  Briefcase,
+  Layers,
+  RefreshCw,
+  Trash2
 } from 'lucide-react';
 import { generateCoverLetter, CoverLetterResponse } from '../services/api';
+import { ResumeData } from '../types/resumeBuilder';
 
 interface CoverLetterPageProps {
   onBackToHome: () => void;
 }
+
+const STORAGE_KEY = 'hirelens_resume_builder_full_draft';
 
 export const CoverLetterPage: React.FC<CoverLetterPageProps> = ({ onBackToHome }) => {
   const [candidateName, setCandidateName] = useState('Alex Morgan');
@@ -32,6 +38,38 @@ export const CoverLetterPage: React.FC<CoverLetterPageProps> = ({ onBackToHome }
   const [generatedResult, setGeneratedResult] = useState<CoverLetterResponse | null>(null);
   const [editableContent, setEditableContent] = useState<string>('');
   const [copied, setCopied] = useState(false);
+
+  // Import from Resume Studio draft
+  const handleImportFromStudio = () => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) {
+        setError('No saved resume found in Resume Studio. Please build or import a resume in Resume Studio first.');
+        return;
+      }
+      const data: ResumeData = JSON.parse(raw);
+      if (data.personal?.fullName) {
+        setCandidateName(data.personal.fullName);
+      }
+      if (data.personal?.targetTitle) {
+        setJobTitle(data.personal.targetTitle);
+      }
+      let summarySnippet = data.summary || '';
+      if (data.experience && data.experience.length > 0) {
+        const topExp = data.experience[0];
+        summarySnippet += ` Recent role: ${topExp.role} at ${topExp.company}`;
+        if (topExp.bullets && topExp.bullets.length > 0) {
+          summarySnippet += ` Key achievement: ${topExp.bullets[0]}`;
+        }
+      }
+      if (summarySnippet) {
+        setExperienceSnippet(summarySnippet.trim());
+      }
+      setError(null);
+    } catch (e: any) {
+      setError('Failed to import details from Resume Studio.');
+    }
+  };
 
   const handleGenerate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,6 +122,11 @@ export const CoverLetterPage: React.FC<CoverLetterPageProps> = ({ onBackToHome }
     window.print();
   };
 
+  const handleClear = () => {
+    setEditableContent('');
+    setGeneratedResult(null);
+  };
+
   const wordCount = editableContent.split(/\s+/).filter(Boolean).length;
 
   return (
@@ -108,6 +151,15 @@ export const CoverLetterPage: React.FC<CoverLetterPageProps> = ({ onBackToHome }
               <p className="text-[11px] text-[#7A8A85]">Tailored, high-converting cover letters matching your resume experience</p>
             </div>
           </div>
+          
+          <button
+            onClick={handleImportFromStudio}
+            className="flex items-center gap-1.5 text-xs font-bold text-[#129A72] bg-[#EAF8F3] hover:bg-[#D5F2E7] border border-[#BDEBDC] px-3 py-1.5 rounded-lg cursor-pointer transition-all"
+            title="Import applicant details from Resume Studio"
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Import from Resume Studio</span>
+          </button>
         </div>
       </div>
 
@@ -198,9 +250,9 @@ export const CoverLetterPage: React.FC<CoverLetterPageProps> = ({ onBackToHome }
                   onChange={e => setTone(e.target.value)}
                   className="w-full text-xs bg-[#F9FBFA] border border-[#D9E3DF] rounded-lg px-3 py-2 text-[#273330] focus:border-[#16B889] outline-none cursor-pointer"
                 >
-                  <option value="Professional & Confident">Professional & Confident (Recommended)</option>
-                  <option value="Direct & Metric-Driven">Direct & Metric-Driven</option>
-                  <option value="Modern & Startup-Minded">Modern & Startup-Minded</option>
+                  <option value="Professional & Confident">Professional & Confident</option>
+                  <option value="Concise & Impact-Driven">Concise & Impact-Driven</option>
+                  <option value="Warm & Passionate">Warm & Passionate</option>
                   <option value="Executive & Strategic">Executive & Strategic</option>
                 </select>
               </div>
@@ -215,12 +267,12 @@ export const CoverLetterPage: React.FC<CoverLetterPageProps> = ({ onBackToHome }
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 rounded-xl text-xs font-bold bg-[#16B889] hover:bg-[#139E75] text-white shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-xl text-xs font-bold bg-[#16B889] hover:bg-[#139E75] text-white shadow-sm cursor-pointer transition-all disabled:opacity-50"
               >
                 {loading ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Generating Personalized Letter...</span>
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                    <span>Generating Cover Letter...</span>
                   </>
                 ) : (
                   <>
@@ -232,85 +284,92 @@ export const CoverLetterPage: React.FC<CoverLetterPageProps> = ({ onBackToHome }
             </form>
           </div>
 
-          {/* RIGHT: GENERATED LETTER CANVAS */}
-          <div className="lg:col-span-7 space-y-4">
-            
-            {/* Action Bar */}
-            <div className="bg-white rounded-2xl border border-[#E3ECE7] p-3.5 flex items-center justify-between shadow-2xs no-print">
-              <div className="flex items-center gap-3">
-                <span className="text-xs font-bold text-[#273330]">
-                  {editableContent ? 'Generated Cover Letter' : 'Cover Letter Preview'}
-                </span>
-                {editableContent && (
-                  <span className="text-[11px] text-[#7A8A85] font-mono">
-                    {wordCount} words
-                  </span>
-                )}
+          {/* RIGHT: PREVIEW & LIVE EDITOR */}
+          <div className="lg:col-span-7 bg-white rounded-2xl border border-[#E3ECE7] p-6 space-y-5 shadow-2xs flex flex-col">
+            <div className="flex items-center justify-between border-b border-[#F0F4F2] pb-3 no-print">
+              <div className="flex items-center gap-2">
+                <FileCheck className="w-4 h-4 text-[#16B889]" />
+                <h3 className="text-xs font-extrabold uppercase tracking-wider text-[#273330]">
+                  Cover Letter Preview & Editor
+                </h3>
               </div>
-
+              
               {editableContent && (
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handleCopy}
-                    className="flex items-center gap-1.5 text-xs font-bold bg-[#F0F5F2] hover:bg-[#E4ECE8] text-[#34413E] px-3 py-1.5 rounded-lg cursor-pointer transition-all"
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#16B889] bg-[#EAF8F3] hover:bg-[#D5F2E7] px-2.5 py-1 rounded-md cursor-pointer transition-all"
                   >
-                    {copied ? <Check className="w-3.5 h-3.5 text-[#16B889]" /> : <Copy className="w-3.5 h-3.5" />}
-                    <span>{copied ? 'Copied!' : 'Copy Text'}</span>
+                    {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
+                    <span>{copied ? 'Copied' : 'Copy'}</span>
                   </button>
-
-                  <button
-                    onClick={handlePrint}
-                    className="flex items-center gap-1.5 text-xs font-bold bg-[#EAF8F3] hover:bg-[#D5F2E7] text-[#129A72] border border-[#BDEBDC] px-3 py-1.5 rounded-lg cursor-pointer transition-all"
-                  >
-                    <Printer className="w-3.5 h-3.5" />
-                    <span>Print / PDF</span>
-                  </button>
-
                   <button
                     onClick={handleDownloadTxt}
-                    className="flex items-center gap-1.5 text-xs font-bold bg-white text-[#44524E] border border-[#D5E1DC] hover:bg-[#F2F6F4] px-3 py-1.5 rounded-lg cursor-pointer transition-all"
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#55625F] bg-[#F0F5F2] hover:bg-[#E4ECE8] px-2.5 py-1 rounded-md cursor-pointer transition-all"
                   >
                     <Download className="w-3.5 h-3.5" />
-                    <span>Export TXT</span>
+                    <span>TXT</span>
+                  </button>
+                  <button
+                    onClick={handlePrint}
+                    className="flex items-center gap-1 text-[11px] font-bold text-[#55625F] bg-[#F0F5F2] hover:bg-[#E4ECE8] px-2.5 py-1 rounded-md cursor-pointer transition-all"
+                  >
+                    <Printer className="w-3.5 h-3.5" />
+                    <span>Print PDF</span>
+                  </button>
+                  <button
+                    onClick={handleClear}
+                    className="text-red-500 hover:text-red-700 p-1 cursor-pointer"
+                    title="Clear content"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
               )}
             </div>
 
-            {/* Letter Paper */}
-            <div className="bg-white rounded-2xl border border-[#DEE7E2] p-8 sm:p-10 shadow-lg min-h-[550px] space-y-4 print:border-none print:shadow-none print:p-0">
-              {editableContent ? (
+            {editableContent ? (
+              <div className="space-y-4 flex-1 flex flex-col">
+                <div className="flex items-center justify-between text-[11px] text-[#7A8A85] font-mono no-print">
+                  <span>Word Count: {wordCount} words</span>
+                  <span>Editable Preview</span>
+                </div>
                 <textarea
-                  rows={22}
+                  rows={16}
                   value={editableContent}
                   onChange={e => setEditableContent(e.target.value)}
-                  className="w-full text-xs sm:text-[13px] leading-relaxed text-[#273330] font-sans border-none outline-none resize-y bg-transparent"
+                  className="w-full flex-1 text-xs font-serif leading-relaxed bg-[#F9FBFA] border border-[#D9E3DF] rounded-xl p-4 text-[#273330] focus:bg-white focus:border-[#16B889] outline-none resize-y"
                 />
-              ) : (
-                <div className="h-[450px] flex flex-col items-center justify-center text-center space-y-3 text-[#8A9A95]">
-                  <div className="w-12 h-12 rounded-full bg-[#F0F5F2] flex items-center justify-center">
-                    <FileCheck className="w-6 h-6 text-[#16B889]" />
+
+                {generatedResult?.highlights && generatedResult.highlights.length > 0 && (
+                  <div className="p-4 bg-[#F2FBF7] rounded-xl border border-[#CCEFE1] space-y-2 no-print">
+                    <span className="text-[11px] font-bold text-[#16B889] uppercase tracking-wider font-mono">
+                      Alignment Highlights
+                    </span>
+                    <ul className="space-y-1">
+                      {generatedResult.highlights.map((h, i) => (
+                        <li key={i} className="text-xs text-[#355248] flex items-center gap-2">
+                          <Check className="w-3 h-3 text-[#16B889] shrink-0" />
+                          <span>{h}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <h4 className="font-bold text-[#35433F] text-sm">Your cover letter will appear here</h4>
-                  <p className="text-xs max-w-sm">
-                    Enter your target role and company on the left, then click <strong>Generate Cover Letter</strong> to draft your application.
+                )}
+              </div>
+            ) : (
+              <div className="py-20 text-center space-y-3 my-auto">
+                <div className="w-12 h-12 rounded-full bg-[#EAF8F3] text-[#16B889] flex items-center justify-center mx-auto">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+                <div className="space-y-1 max-w-sm mx-auto">
+                  <h4 className="text-xs font-extrabold text-[#273330]">No Cover Letter Generated Yet</h4>
+                  <p className="text-[11px] text-[#7A8A85]">
+                    Fill in your application details on the left or import from Resume Studio, then click Generate.
                   </p>
                 </div>
-              )}
-            </div>
-
-            {/* Key highlights if available */}
-            {generatedResult?.highlights && (
-              <div className="p-4 bg-[#F2F9F6] rounded-xl border border-[#CCE8DD] space-y-2 no-print">
-                <span className="text-xs font-bold text-[#129A72]">Cover Letter Strategy Highlights:</span>
-                <ul className="text-xs text-[#35433F] space-y-1 list-disc list-inside">
-                  {generatedResult.highlights.map((h, i) => (
-                    <li key={i}>{h}</li>
-                  ))}
-                </ul>
               </div>
             )}
-
           </div>
 
         </div>

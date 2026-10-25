@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { DotLottieReact } from '@lottiefiles/dotlottie-react';
+import { AtsScanIllustration } from './AtsScanIllustration';
 import { Check } from 'lucide-react';
 
 export const ExplanationSection: React.FC = () => {
@@ -103,14 +103,8 @@ export const ExplanationSection: React.FC = () => {
                 Skills
               </div>
 
-              {/* Main Lottie Player */}
-              <DotLottieReact
-                src="https://lottie.host/51852c39-afc0-4165-9db7-ce7a691b700e/4QH8gDHLjs.lottie"
-                loop
-                autoplay
-                style={{ width: '100%', height: '100%' }}
-                className="w-full h-full object-contain"
-              />
+              {/* Native Self-Contained ATS Scanner Illustration */}
+              <AtsScanIllustration />
 
             </div>
           </div>
